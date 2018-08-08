@@ -1,0 +1,265 @@
+"""ゲームキャンバスにおける、レイヤーを扱うモジュールです。
+
+ゲームキャンバス内のデータは、レイヤーという層に格納されます。
+背景は背景レイヤーに、キャラクターや物体はオブジェクトレイヤー、という具合です。
+それらのレイヤーを作成するためのクラスを提供しています。
+
+"""
+import json
+import random
+from broccoli.conf import settings
+
+
+class BaseLayer:
+    """全てのレイヤの基底クラス。"""
+
+    def __init__(self):
+        self.layer = None
+        self.canvas = None
+
+    def all(self, include_none=True):
+        """レイヤ内のものを全て返す。
+
+        include_noneがTrueの場合、オブジェクトレイヤやアイテムレイヤで返されるNoneや空リストも含めて返します。
+        Falseの場合はそれらを省き、存在しているマテリアルだけ返します。
+
+        """
+        for y, row in enumerate(self):
+            for x, col in enumerate(row):
+                if include_none or col:
+                    yield x, y, col
+
+    def create_material(self, material_cls, x=None, y=None, **kwargs):
+        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
+        try:
+            material = material_cls(**kwargs)
+        except TypeError:
+            # マテリアルが既にインスタンス化済みの場合にここ
+            material = material_cls
+        material.canvas = self.canvas
+
+        # x,y座標の指定がなければ座標を探す
+        if x is None or y is None:
+            x, y = self.get_random_empty_space(material)
+
+        self[y][x] = material
+        material_id = self.canvas.create_image(
+            x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT,
+            image=material.image, anchor='nw'
+        )
+        material.x = x
+        material.y = y
+        material.system = self.canvas.system
+        material.id = material_id
+        return material_id
+
+    def get_empty_space(self, material=None):
+        """空いているスペースを全てyieldで返す。
+
+        マテリアルの種類によって空いているの定義が異なるため、それぞれでオーバーライドしています。
+
+        """
+        raise NotImplementedError
+
+    def get_random_empty_space(self, material=None):
+        """空いているスペースをランダムで1つ返す。"""
+        empty_spaces = list(self.get_empty_space(material))
+        return random.choice(empty_spaces)
+
+    def __getitem__(self, item):
+        """self.layerにデリゲート。
+
+        item_layer.layer[y][x]ではなく、
+        item_layer[y][x]と書くために実装しています。
+
+        """
+        return self.layer[item]
+
+
+class BaseTileLayer(BaseLayer):
+    """背景レイヤの基底クラス。"""
+
+    def __init__(self, x_length, y_length):
+        super().__init__()
+        self.x_length = x_length
+        self.y_length = y_length
+        self.first_tile_id = None
+
+    def create(self, canvas):
+        """レイヤーの作成、描画を行う。"""
+        self.canvas = canvas
+        self.layer = [[None for _ in range(self.x_length)] for _ in range(self.y_length)]
+        self.create_layer()
+
+    def get_empty_space(self, material=None):
+        """空いているスペースを全てyieldで返す。
+
+        is_publicがTrueのタイルであれば空いているとみなします。
+        ランダムにゴールタイルなどを設定したい場合には便利です。
+
+        しかし逆に、既に存在する特殊なタイル(ゴールタイル等)の座標を返してしまう恐れもあるため、
+        tile_layerのget_empty_space及びget_random_empty_spaceの利用は注意してください。
+
+        material引数は他レイヤのメソッドの引数と合わせる必要があるために定義していますが、使いません。
+
+        """
+        for x, y, tile in self.all():
+            if tile.is_public():
+                yield x, y
+
+    def to_json(self, path):
+        """背景レイヤをjsonとして出力する。"""
+        data = {
+            'x_length': self.x_length,
+            'y_length': self.y_length,
+            'layer': [[None for _ in range(self.x_length)] for _ in range(self.y_length)],
+        }
+        for x, y, tile in self.all():
+            data['layer'][y][x] = {
+                'class_name': tile.__class__.__name__,
+                'kwargs': tile.to_dict(),
+            }
+        with open(path, 'w', encoding='utf-8') as file:
+            json.dump(data, file)
+
+    def create_material(self, material_cls, x=None, y=None, **kwargs):
+        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
+        material_id = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lower(material_id)  # 背景は一番下に配置する
+
+        # 一番はじめのタイルはIDを保存しておきます。
+        # オブジェクトはどんどん上に描画され、タイルはどんどん下に描画され、アイテムは最初のタイルの上に描画されます。
+        # 結果として、オブジェクト アイテム タイル という順番での重なりで描画されます。
+        if self.first_tile_id is None:
+            self.first_tile_id = material_id
+        return material_id
+
+
+class BaseObjectLayer(BaseLayer):
+    """オブジェクトレイヤの基底クラス。"""
+
+    def __init__(self):
+        super().__init__()
+        self.tile_layer = None
+
+    def create(self, canvas, tile_layer):
+        """レイヤーの作成、描画を行う。"""
+        self.canvas = canvas
+        self.tile_layer = tile_layer
+        self.layer = [[None for _ in range(tile_layer.x_length)] for _ in range(tile_layer.y_length)]
+        self.create_layer()
+
+    def get_empty_space(self, material=None):
+        """空いているスペースを全てyieldで返す。
+
+        そのオブジェクトにとって、移動可能(配置可能)な座標を返します。
+
+        """
+        for x, y, tile in self.tile_layer.all():
+            ok, _, _ = material.can_move(x, y)
+            if ok:
+                yield x, y
+
+    def to_json(self, path):
+        """オブジェクトレイヤーをJSON出力する"""
+        data = {
+            'layer': [[None for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
+        }
+        for x, y, obj in self.all():
+            if obj is None:
+                data['layer'][y][x] = None
+            else:
+                data['layer'][y][x] = {
+                    'class_name': obj.__class__.__name__,
+                    'kwargs': obj.to_dict(),
+                }
+
+        with open(path, 'w', encoding='utf-8') as file:
+            json.dump(data, file)
+
+    def clear(self):
+        """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
+        for x, y, obj in self.all(include_none=False):
+            self[y][x] = None
+            self.canvas.delete(obj.id)
+
+    def create_material(self, material_cls, x=None, y=None, **kwargs):
+        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す"""
+        material_id = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lift(material_id)  # オブジェクトは一番上に配置する
+        return material_id
+
+
+class BaseItemLayer(BaseLayer):
+    """アイテムレイヤの基底クラス。"""
+
+    def __init__(self):
+        super().__init__()
+        self.tile_layer = None
+
+    def create(self, canvas, tile_layer):
+        """レイヤーの作成、描画を行う"""
+        self.canvas = canvas
+        self.tile_layer = tile_layer
+        self.layer = [[[] for _ in range(tile_layer.x_length)] for _ in range(tile_layer.y_length)]
+        self.create_layer()
+
+    def get_empty_space(self, material=None):
+        """空いているスペースを全てyieldで返す。
+
+        そのアイテムにとって、配置可能な座標を返します。
+        tileのis_public(引数なし)がTrueであれば配置可能と考えます。
+
+        """
+        for x, y, tile in self.tile_layer.all():
+            if tile.is_public():
+                yield x, y
+
+    def to_json(self, path):
+        """オブジェクトレイヤーをJSON出力する。"""
+        data = {
+            'layer': [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
+        }
+        for x, y, items in self.all():
+            if items:
+                data['layer'][y][x] = [
+                    {'class_name': item.__class__.__name__, 'kwargs': item.to_dict()} for item in items
+                ]
+
+            else:
+                data['layer'][y][x] = []
+
+        with open(path, 'w', encoding='utf-8') as file:
+            json.dump(data, file)
+
+    def clear(self):
+        """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
+        for x, y, items in self.all(include_none=False):
+            self[y][x] = []
+            for item in items:
+                self.canvas.delete(item.id)
+
+    def create_material(self, material_cls, x=None, y=None, **kwargs):
+        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
+        try:
+            material = material_cls(**kwargs)
+        except TypeError:
+            # マテリアルが既にインスタンス化済みの場合にここ
+            material = material_cls
+        material.canvas = self.canvas
+
+        # x,y座標の指定がなければ座標を探す
+        if x is None or y is None:
+            x, y = self.get_random_empty_space(material)
+
+        self[y][x].append(material)  # アイテムは複数格納できるので、各セルはリストになっている
+        material_id = self.canvas.create_image(
+            x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT,
+            image=material.image, anchor='nw'
+        )
+        material.x = x
+        material.y = y
+        material.system = self.canvas.system
+        material.id = material_id
+        self.canvas.lift(material_id, self.tile_layer.first_tile_id)  # 一番上にある背景の上
+        return material_id
