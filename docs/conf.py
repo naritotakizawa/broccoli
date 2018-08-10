@@ -14,21 +14,19 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../'))
-
-
-# -- Project information -----------------------------------------------------
-import os
-import sys
+docs_dir_path = os.path.dirname(__file__)
+root_dir_path = os.path.dirname(docs_dir_path)
+sys.path.insert(0, root_dir_path)
+import broccoli
 
 project = 'broccoli'
 copyright = '2018, NaritoTakizawa'
 author = 'NaritoTakizawa'
 
 # The short X.Y version
-version = '0.1'
+version = '.'.join(broccoli.__version__.split('.')[:2])
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = broccoli.__version__
 
 
 # -- General configuration ---------------------------------------------------
