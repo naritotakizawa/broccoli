@@ -4,7 +4,7 @@ broccoli
 
 broccoliは、Python/Tkinterでのゲーム作成を支援するフレームワークです。
 
-実際の開発方法や、broccoliで作られたサンプルゲームは `説明書 <https://broccoli-docs.readthedocs.io/ja/stable/>`_ をご覧ください。
+実際の開発方法や、broccoliで作られたサンプルゲームは `説明書 <https://broccoli-docs.readthedocs.io/ja/0.2/>`_ をご覧ください。
 
 インストール
 =============
