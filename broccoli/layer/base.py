@@ -17,6 +17,11 @@ class BaseLayer:
         self.layer = None
         self.canvas = None
 
+    def put_material(self, material, x, y):
+        self[y][x] = material
+        material.x = x
+        material.y = y
+
     def all(self, include_none=True):
         """レイヤ内のものを全て返す。
 
@@ -30,28 +35,19 @@ class BaseLayer:
                     yield x, y, col
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            # マテリアルが既にインスタンス化済みの場合にここ
-            material = material_cls
-        material.canvas = self.canvas
+        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う"""
+        # マテリアルの生成と初期設定
+        material = self.canvas.system.create_material(material_cls)
 
+        # レイヤへの配置
         # x,y座標の指定がなければ座標を探す
         if x is None or y is None:
             x, y = self.get_random_empty_space(material)
+        self.put_material(material, x, y)
 
-        self[y][x] = material
-        material_id = self.canvas.create_image(
-            x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT,
-            image=material.image, anchor='nw'
-        )
-        material.x = x
-        material.y = y
-        material.system = self.canvas.system
-        material.id = material_id
-        return material_id
+        # キャンバスへの描画
+        self.canvas.create_material(material)
+        return material
 
     def get_empty_space(self, material=None):
         """空いているスペースを全てyieldで返す。
@@ -85,9 +81,8 @@ class BaseTileLayer(BaseLayer):
         self.y_length = y_length
         self.first_tile_id = None
 
-    def create(self, canvas):
+    def create(self):
         """レイヤーの作成、描画を行う。"""
-        self.canvas = canvas
         self.layer = [[None for _ in range(self.x_length)] for _ in range(self.y_length)]
         self.create_layer()
 
@@ -123,16 +118,15 @@ class BaseTileLayer(BaseLayer):
             json.dump(data, file)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
-        material_id = super().create_material(material_cls, x=x, y=y, **kwargs)
-        self.canvas.lower(material_id)  # 背景は一番下に配置する
+        material = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lower(material.id)  # 背景は一番下に配置する
 
         # 一番はじめのタイルはIDを保存しておきます。
         # オブジェクトはどんどん上に描画され、タイルはどんどん下に描画され、アイテムは最初のタイルの上に描画されます。
         # 結果として、オブジェクト アイテム タイル という順番での重なりで描画されます。
         if self.first_tile_id is None:
-            self.first_tile_id = material_id
-        return material_id
+            self.first_tile_id = material.id
+        return material
 
 
 class BaseObjectLayer(BaseLayer):
@@ -142,11 +136,9 @@ class BaseObjectLayer(BaseLayer):
         super().__init__()
         self.tile_layer = None
 
-    def create(self, canvas, tile_layer):
+    def create(self):
         """レイヤーの作成、描画を行う。"""
-        self.canvas = canvas
-        self.tile_layer = tile_layer
-        self.layer = [[None for _ in range(tile_layer.x_length)] for _ in range(tile_layer.y_length)]
+        self.layer = [[None for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)]
         self.create_layer()
 
     def get_empty_space(self, material=None):
@@ -184,10 +176,9 @@ class BaseObjectLayer(BaseLayer):
             self.canvas.delete(obj.id)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す"""
-        material_id = super().create_material(material_cls, x=x, y=y, **kwargs)
-        self.canvas.lift(material_id)  # オブジェクトは一番上に配置する
-        return material_id
+        material = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lift(material.id)  # オブジェクトは一番上に配置する
+        return material
 
 
 class BaseItemLayer(BaseLayer):
@@ -197,11 +188,14 @@ class BaseItemLayer(BaseLayer):
         super().__init__()
         self.tile_layer = None
 
-    def create(self, canvas, tile_layer):
+    def put_material(self, material, x, y):
+        self[y][x].append(material)
+        material.x = x
+        material.y = y
+
+    def create(self):
         """レイヤーの作成、描画を行う"""
-        self.canvas = canvas
-        self.tile_layer = tile_layer
-        self.layer = [[[] for _ in range(tile_layer.x_length)] for _ in range(tile_layer.y_length)]
+        self.layer = [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)]
         self.create_layer()
 
     def get_empty_space(self, material=None):
@@ -240,26 +234,6 @@ class BaseItemLayer(BaseLayer):
                 self.canvas.delete(item.id)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            # マテリアルが既にインスタンス化済みの場合にここ
-            material = material_cls
-        material.canvas = self.canvas
-
-        # x,y座標の指定がなければ座標を探す
-        if x is None or y is None:
-            x, y = self.get_random_empty_space(material)
-
-        self[y][x].append(material)  # アイテムは複数格納できるので、各セルはリストになっている
-        material_id = self.canvas.create_image(
-            x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT,
-            image=material.image, anchor='nw'
-        )
-        material.x = x
-        material.y = y
-        material.system = self.canvas.system
-        material.id = material_id
-        self.canvas.lift(material_id, self.tile_layer.first_tile_id)  # 一番上にある背景の上
-        return material_id
+        material = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lift(material.id, self.tile_layer.first_tile_id)  # 一番上にある背景の上
+        return material

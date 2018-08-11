@@ -33,19 +33,25 @@ class GameCanvas2D(tk.Canvas):
 
         # 背景層
         self.tile_layer = tile_layer
+        self.tile_layer.canvas = self
 
         # 物体層。object_layerがNoneなら、object_layerが何もない(layer内が全てNone)なEmptyObjectLayerを利用する。
         if object_layer is None:
             object_layer = EmptyObjectLayer()
         self.object_layer = object_layer
+        self.object_layer.canvas = self
+        self.object_layer.tile_layer = self.tile_layer
 
         # アイテム層。item_layerがNoneなら、item_layerが何もない(layer内が全てNone)ならEmptyItemLayerを利用する
         if item_layer is None:
             item_layer = EmptyItemLayer()
         self.item_layer = item_layer
+        self.item_layer.canvas = self
+        self.item_layer.tile_layer = self.tile_layer
 
         # ゲームシステムを保持する。
         self.system = system
+        self.system.canvas = self
 
         # マップ全体の高さと幅
         max_height = self.tile_layer.y_length * settings.CELL_HEIGHT
@@ -56,10 +62,10 @@ class GameCanvas2D(tk.Canvas):
         super().__init__(master=manager.root, scrollregion=scroll_region, width=settings.GAME_WIDTH, height=settings.GAME_HEIGHT)
 
         # マップとシステムの初期設定
-        self.tile_layer.create(self)
-        self.object_layer.create(self, self.tile_layer)
-        self.item_layer.create(self, tile_layer)
-        self.system.setup(self)
+        self.tile_layer.create()
+        self.object_layer.create()
+        self.item_layer.create()
+        self.system.setup()
 
     def start(self):
         """このマップを楽しく遊ぶことができます。"""
@@ -212,3 +218,12 @@ class GameCanvas2D(tk.Canvas):
         # デフォルトでは、0.1秒後にダメージ線を消す
         self.after(int(times*1000))
         self.delete(damage_line)
+
+    def create_material(self, material):
+        """マテリアルの描画を行う"""
+        material_id = self.create_image(
+            material.x*settings.CELL_WIDTH,
+            material.y*settings.CELL_HEIGHT,
+            image=material.image, anchor='nw'
+        )
+        material.id = material_id

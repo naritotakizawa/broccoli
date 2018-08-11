@@ -29,11 +29,22 @@ class RogueLikeSystem:
         self.message_class = message_class
         self.show_item_dialog_class = show_item_dialog_class
 
-    def setup(self, canvas):
-        self.canvas = canvas
+        self.canvas = None
+        self.message = None
 
+    def create_material(self, material_cls, **kwargs):
+        try:
+            material = material_cls(**kwargs)
+        except TypeError:
+            material = material_cls
+
+        material.system = self
+        material.canvas = self.canvas
+        return material
+
+    def setup(self):
         # メッセージクラスのインスタンス化
-        self.message = self.message_class(parent=self, canvas=canvas)
+        self.message = self.message_class(parent=self, canvas=self.canvas)
 
     def start(self):
         # 0.1 秒ぐらいごとに、ゲームの状態を監視する
@@ -129,19 +140,12 @@ class RogueLikeSystem:
 class RogueWithPlayer(RogueLikeSystem):
     """プレイヤーがいるローグライクシステム。"""
 
-    def setup(self, canvas):
-        super().setup(canvas)
-
+    def setup(self,):
+        super().setup()
         # プレイヤーがいないとダメ
-        player = canvas.manager.player
-        if player is None:
-            # ここは専用の例外を作る
-            raise Exception('プレイヤーを指定してください。')
-        player.canvas = canvas
-
-        self.player = player
-        canvas.object_layer.create_material(material_cls=player)
-        self.canvas.move_camera(player)  # 主人公位置に合わせて表示部分を動かす
+        self.player = self.canvas.manager.player
+        self.canvas.object_layer.create_material(material_cls=self.player)
+        self.canvas.move_camera(self.player)  # 主人公位置に合わせて表示部分を動かす
 
     def move(self, event):
         """主人公の移動処理。"""
@@ -252,13 +256,13 @@ class RogueWithPlayer(RogueLikeSystem):
 class RogueNoPlayer(RogueLikeSystem):
     """プレイヤーのいない、観戦用モード。"""
 
-    def setup(self, canvas):
-        super().setup(canvas)
+    def setup(self):
+        super().setup()
 
         # 中央にカメラ移動
-        self.x = canvas.tile_layer.x_length // 2
-        self.y = canvas.tile_layer.y_length // 2
-        self.canvas.move_camera(canvas.tile_layer[self.y][self.x])
+        self.x = self.canvas.tile_layer.x_length // 2
+        self.y = self.canvas.tile_layer.y_length // 2
+        self.canvas.move_camera(self.canvas.tile_layer[self.y][self.x])
 
     def move(self, event):
         """カメラ移動処理。"""
