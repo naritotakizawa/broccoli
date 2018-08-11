@@ -231,18 +231,22 @@ class MapEditor(ttk.Frame):
         file_path = filedialog.askopenfilename(title='オブジェクトjsonの選択')
         if file_path:
             object_layer = JsonObjectLayer(file_path)
+            object_layer.canvas = self.canvas_frame.canvas
+            object_layer.tile_layer = self.canvas_frame.tile_layer
             self.canvas_frame.canvas.object_layer.clear()
             self.canvas_frame.canvas.object_layer = object_layer
-            self.canvas_frame.canvas.object_layer.create(self.canvas_frame.canvas, self.canvas_frame.canvas.tile_layer)
+            self.canvas_frame.canvas.object_layer.create()
 
     def item_from_json(self):
         """アイテムをjsonから読み込みボタで呼ばれる"""
         file_path = filedialog.askopenfilename(title='アイテムjsonの選択')
         if file_path:
             item_layer = JsonItemLayer(file_path)
+            item_layer.canvas = self.canvas_frame.canvas
+            item_layer.tile_layer = self.canvas_frame.tile_layer
             self.canvas_frame.canvas.item_layer.clear()
             self.canvas_frame.canvas.item_layer = item_layer
-            self.canvas_frame.canvas.item_layer.create(self.canvas_frame.canvas, self.canvas_frame.canvas.tile_layer)
+            self.canvas_frame.canvas.item_layer.create()
 
     def save_json(self):
         """jsonとして保存ボタンで呼ばれる"""

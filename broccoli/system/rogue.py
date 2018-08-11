@@ -9,9 +9,10 @@ import tkinter.ttk as ttk
 from broccoli import const
 from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
 from broccoli.conf import settings
+from .base import BaseSystem
 
 
-class RogueLikeSystem:
+class RogueLikeSystem(BaseSystem):
     """ローグライクに使えそうなシステムクラスの基底。"""
     # HPやターン数の表示に関する設定
     text_size = 18
@@ -20,27 +21,12 @@ class RogueLikeSystem:
     color = settings.DEFAULT_TEXT_COLOR
 
     def __init__(self, message_class=LogAndActiveMessageDialog, show_item_dialog_class=ListDialog):
-        # Trueのときは、次のキャラクターは行動を待つ、などに使うフラグです。
-        self.is_block = False
-
+        super().__init__()
         # 現在ターンを表す変数
         self.turn = 0
 
         self.message_class = message_class
         self.show_item_dialog_class = show_item_dialog_class
-
-        self.canvas = None
-        self.message = None
-
-    def create_material(self, material_cls, **kwargs):
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            material = material_cls
-
-        material.system = self
-        material.canvas = self.canvas
-        return material
 
     def setup(self):
         # メッセージクラスのインスタンス化

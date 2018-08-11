@@ -35,31 +35,12 @@ class EditorCanvas(GameCanvas2D):
     """
 
     def __init__(self, master=None, tile_layer=None, click_callback=None, **kwargs):
-        self.click_callback = click_callback
-
-        # tile_layerがNoneの場合は、仮のタイルを使ったSimppleBackgroundを利用する
+        # tile_layerがNoneの場合は、仮のタイルを使ったSimpleTileLayerを利用する
         if tile_layer is None:
             tile_layer = SimpleTileLayer(x_length=10, y_length=10, inner_tile=TestTile, outer_tile=TestTile)
-        self.tile_layer = tile_layer
-        self.object_layer = EmptyObjectLayer()
-        self.item_layer = EmptyItemLayer()
-        self.system = None  # ゲームシステムは不要
+        super().__init__(master=master, tile_layer=tile_layer)
 
-        # マップ全体の高さと幅
-        max_height = self.tile_layer.y_length * settings.CELL_HEIGHT
-        max_width = self.tile_layer.x_length * settings.CELL_WIDTH
-
-        # Canvas内をスクロール可能にし、スクロールの最大値を設定
-        scroll_region = (0, 0, max_width, max_height)
-        tk.Canvas.__init__(
-            self, master=master,
-            scrollregion=scroll_region,
-            width=settings.GAME_WIDTH, height=settings.GAME_HEIGHT,
-            **kwargs
-        )
-        self.tile_layer.create(self)
-        self.object_layer.create(self, self.tile_layer)
-        self.item_layer.create(self, self.tile_layer)
+        self.click_callback = click_callback
         if click_callback is not None:
             self.bind('<1>', self.click)
 
@@ -109,7 +90,7 @@ class EditorCanvasWithScrollBar(ttk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        self.canvas = EditorCanvas(master=self, tile_layer=self.tile_layer, click_callback=self.click_callback)
+        self.canvas = EditorCanvas(self, tile_layer=self.tile_layer, click_callback=self.click_callback)
         self.canvas.grid(row=0, column=0, sticky=STICKY_ALL)
         scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL, command=self.canvas.xview)
         scroll_x.grid(row=1, column=0, sticky=(tk.E, tk.W))

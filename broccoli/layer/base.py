@@ -37,7 +37,7 @@ class BaseLayer:
     def create_material(self, material_cls, x=None, y=None, **kwargs):
         """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う"""
         # マテリアルの生成と初期設定
-        material = self.canvas.system.create_material(material_cls)
+        material = self.canvas.system.create_material(material_cls, **kwargs)
 
         # レイヤへの配置
         # x,y座標の指定がなければ座標を探す

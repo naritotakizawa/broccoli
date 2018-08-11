@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import filedialog
 from broccoli.conf import settings
 from broccoli.layer import EmptyObjectLayer, EmptyItemLayer
+from broccoli.system import BaseSystem
 
 
 class GameCanvas2D(tk.Canvas):
@@ -27,7 +28,7 @@ class GameCanvas2D(tk.Canvas):
 
     """
 
-    def __init__(self, manager, name, tile_layer, system, object_layer=None, item_layer=None):
+    def __init__(self, tile_layer, master=None, name='名前のないマップ', manager=None, system=None, object_layer=None, item_layer=None):
         self.manager = manager
         self.name = name
 
@@ -50,6 +51,8 @@ class GameCanvas2D(tk.Canvas):
         self.item_layer.tile_layer = self.tile_layer
 
         # ゲームシステムを保持する。
+        if system is None:
+            system = BaseSystem()
         self.system = system
         self.system.canvas = self
 
@@ -59,7 +62,7 @@ class GameCanvas2D(tk.Canvas):
 
         # Canvas内をスクロール可能にし、スクロールの最大値を設定
         scroll_region = (0, 0, max_width, max_height)
-        super().__init__(master=manager.root, scrollregion=scroll_region, width=settings.GAME_WIDTH, height=settings.GAME_HEIGHT)
+        super().__init__(master=master, scrollregion=scroll_region, width=settings.GAME_WIDTH, height=settings.GAME_HEIGHT)
 
         # マップとシステムの初期設定
         self.tile_layer.create()
