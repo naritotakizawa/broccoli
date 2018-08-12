@@ -92,10 +92,9 @@ class TileList(BaseList):
 
     def update_widget(self, item):
         """マテリアルのプレビューや、説明を描画する"""
-        des = '\nクラス名:{}\n表示名:{}\n説明:{}\n通行可能フラグ(デフォルト):{}\n上に乗った際の処理:{}'.format(
-            item.__name__, item.name, item.description,
-            item.public, item.on
-        )
+        des = ''
+        for key, value in item.get_class_attrs().items():
+            des += '{}: {}\n'.format(key, value)
         self.description.delete('1.0', 'end')
         self.description.insert('1.0', des)
 
@@ -180,10 +179,9 @@ class ObjectList(BaseList):
         if item is None:
             des = '何も選択していません。(オブジェクトクリックで消去できます)'
         else:
-            des = '\nクラス名:{}\n表示名:{}\n説明:{}\nHP:{}\nパワー:{}'.format(
-                item.__name__, item.name, item.description,
-                item.default_hp, item.default_power
-            )
+            des = ''
+            for key, value in item.get_class_attrs().items():
+                des += '{}: {}\n'.format(key, value)
         self.description.delete('1.0', 'end')
         self.description.insert('1.0', des)
 
@@ -278,9 +276,9 @@ class ItemList(BaseList):
         if item is None:
             des = '何も選択していません。(中央キャンバスクリックでアイテムを消去できます)'
         else:
-            des = '\nクラス名:{}\n表示名:{}\nパワー:{}'.format(
-                item.__name__, item.name, item.default_power
-            )
+            des = ''
+            for key, value in item.get_class_attrs().items():
+                des += '{}: {}\n'.format(key, value)
         self.description.delete('1.0', 'end')
         self.description.insert('1.0', des)
 

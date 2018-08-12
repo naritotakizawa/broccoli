@@ -21,7 +21,6 @@ STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
 
 class TestTile(BaseTile):
     name = 'テストタイル'
-    description = '初回にだけ表示されるテスト用のタイルです。必ず他のタイルで上書きしてください。'
     image = NoDirection(os.path.join(settings.BROCCOLI_IMG_DIR, 'test.png'))
     public = False
 

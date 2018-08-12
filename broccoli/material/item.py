@@ -9,7 +9,6 @@ from broccoli.material.base import BaseMaterial
 class BaseItem(BaseMaterial):
     """全てのアイテムの基底クラス。"""
     name = 'ベースアイテム'
-    description = 'アイテムのベースクラスです'
     default_power = 0
 
     def __init__(self, direction=0, diff=0, name=None, owner=None):
@@ -21,7 +20,6 @@ class BaseItem(BaseMaterial):
 class HealingItem(BaseItem):
     """回復アイテムの基底クラス。"""
     name = '回復アイテム'
-    description = '回復アイテムです。'
     default_power = 1
 
     def use(self):

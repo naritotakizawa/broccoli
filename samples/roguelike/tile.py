@@ -7,7 +7,6 @@ from broccoli.material.function import only_player, goal
 @register.tile
 class GrassTile(BaseTile):
     name = '草原'
-    description = '草のタイル'
     image = MultiDirection([
         'img/tile/grass/grass1.png',
         'img/tile/grass/grass2.png',
@@ -19,7 +18,6 @@ class GrassTile(BaseTile):
 @register.tile
 class WallTile(BaseTile):
     name = '壁'
-    description = '壁のタイル'
     image = NoDirection('img/tile/wall/wall1.png')
     public = False  # 通れないタイル
 
@@ -27,6 +25,4 @@ class WallTile(BaseTile):
 @register.tile
 class MapTip1(BaseTile):
     name = 'マップチップ1'
-    description = 'マップチップ1'
     image = NormalSplite('img/tipset1.png')
-

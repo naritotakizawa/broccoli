@@ -11,7 +11,6 @@ from broccoli.material.base import BaseMaterial
 
 class BaseObject(BaseMaterial):
     name = 'ベースオブジェクト'
-    description = 'オブジェクトのベースクラスです。この説明が見えていると、何かおかしいぞ!'
     default_hp = -1
     default_power = -1
     see_x = 2
@@ -95,13 +94,11 @@ class BaseObject(BaseMaterial):
 class UnBreakableObject(BaseObject):
     """何も行動せず、死なないオブジェクト。"""
     name = '壊れないオブジェクト'
-    description = '木や岩など、何も行動ないものに設定してください。'
 
 
 class BreakableObject(BaseObject):
     """壊れるオブジェクト。"""
     name = '壊れるオブジェクト'
-    description = '行動はしないが、壊れるものに設定してください。'
     default_hp = 10
     default_power = 10
     kind = const.ENEMY

@@ -9,7 +9,6 @@ from broccoli.material.base import BaseMaterial
 
 class BaseTile(BaseMaterial):
     name = 'ベースタイル'
-    description = 'タイルのベースクラスです。この説明が見えていると、何かおかしいぞ!'
     public = True
     on = None
 

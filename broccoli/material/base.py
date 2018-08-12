@@ -14,12 +14,13 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 使いたい画像の透過具合(tileの画像内に透過部分があると、表示が上手くされません)などを見ながら使うと良いでしょう。
 
 """
+import inspect
 
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
     name = 'ベースマテリアル'
-    description = '全てのベース。この説明が見えていると、何かおかしいぞ!'
+    image = None
 
     def __init__(self, direction=0, diff=0, name=None):
         """初期化処理
@@ -94,3 +95,24 @@ class BaseMaterial:
             'direction': self.direction,
             'diff': self.diff,
         }
+
+    @classmethod
+    def get_class_attrs(cls):
+        """重要なクラス属性を辞書として返します。
+
+        エディタ等で、そのクラスを説明するに足る情報を辞書として返します。
+        nameや、タイルならばonやpublic、システムクラスが「power」などの属性を求めていれば、それも返します。
+
+        具体的には以下のような処理を行います。
+        - 「_」で始まらず
+        - directionとimage属性は除き
+        - クラスの持つメソッド・関数を除く(onやpublicといった、関数にもなりえる属性は返す)
+
+        """
+        result = {}
+        allow_func_names = ('on', 'public')
+        for key, value in inspect.getmembers(cls):
+            if not key.startswith('_') and key != 'direction' and key != 'image':
+                if key in allow_func_names or  not inspect.isroutine(value):
+                    result[key] = value
+        return result
