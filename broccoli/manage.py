@@ -8,14 +8,6 @@ from broccoli import const
 from broccoli.conf import settings
 
 
-def player_on_die(on_die_method, self):
-    """プレイヤーのon_dieでゲームオーバーにするためのデコレータ。"""
-    def _player_on_die(*args, **kwargs):
-        on_die_method(*args, **kwargs)
-        self.canvas.manager.game_over()
-    return _player_on_die
-
-
 class SimpleGameManager:
     """シンプルなゲームを作るためのマネージャークラス。
 
@@ -49,7 +41,6 @@ class SimpleGameManager:
     def create_player(self):
         """プレイヤーの作成と設定"""
         self.player = self.player_cls(name='あなた', kind=const.PLAYER)
-        self.player.on_die = player_on_die(self.player.on_die, self.player)
 
     def next_canvas(self, next_canvas_index=None):
         """次のマップを表示する"""

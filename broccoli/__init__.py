@@ -12,6 +12,7 @@ class Register:
         self.items = {}
         self.public_funcs = {}
         self.on_funcs = {}
+        self.generic_funcs = {}
 
     def tile(self, tile_cls):
         self.tiles[tile_cls.__name__] = tile_cls
@@ -31,6 +32,10 @@ class Register:
 
     def on(self, func):
         self.on_funcs[func.__name__] = func
+        return func
+
+    def generic(self, func):
+        self.generic_funcs[func.__name__] = func
         return func
 
 

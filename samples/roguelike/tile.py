@@ -1,7 +1,7 @@
 from broccoli import register
 from broccoli.material import BaseTile
 from broccoli.img.loader import MultiDirection, NoDirection, NormalSplite
-from broccoli.material.function import only_player, goal
+from broccoli.material import only_player, goal, return_false, return_true
 
 
 @register.tile
@@ -19,7 +19,7 @@ class GrassTile(BaseTile):
 class WallTile(BaseTile):
     name = '壁'
     image = NoDirection('img/tile/wall/wall1.png')
-    public = False  # 通れないタイル
+    is_public = return_false
 
 
 @register.tile

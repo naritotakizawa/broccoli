@@ -15,11 +15,12 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 
 """
 import inspect
+from broccoli import register
 
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
-    name = 'ベースマテリアル'
+    name = '名無し'
     image = None
 
     def __init__(self, direction=0, diff=0, name=None):
@@ -116,3 +117,36 @@ class BaseMaterial:
                 if key in allow_func_names or  not inspect.isroutine(value):
                     result[key] = value
         return result
+
+
+@register.generic
+def do_nothing(self, *args, **kwargs):
+    """何もしません。
+
+    actionやon_selfなどで、何か関数を指定しなければいけないが
+    特にさせたい処理がない場合は、この関数を指定してください。
+
+    """
+    pass
+
+
+@register.generic
+def return_true(self, *args, **kwargs):
+    """Trueを返します。
+
+    is_publicのように、TrueかFalseを返す関数が求められることがあります。
+    この関数は必ずTrueを返します。is_publicに指定したならば、そのタイルは通行可能なタイルとなるでしょう。
+
+    """
+    return True
+
+
+@register.generic
+def return_false(self, *args, **kwargs):
+    """Falseを返します。
+
+    is_publicのように、TrueかFalseを返す関数が求められることがあります。
+    この関数は必ずFalseを返します。is_publicに指定したならば、そのタイルは通行できなくなります。
+
+    """
+    return False
