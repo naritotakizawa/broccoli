@@ -124,22 +124,13 @@ class GameCanvas2D(tk.Canvas):
 
         ・x, yがマイナスの値の場合
         ・マップの範囲外の場合
-        には、(None, None)を返します。
-
-        そうでなければ、その座標にある背景とオブジェクトを返します。
-        マップの範囲外や不正なインデックスは、tileがNoneかどうかだけで判断できます。
+        にはFalseを返します。
 
         """
-        if x < 0 or y < 0:
-            return None, None
+        if x < 0 or y < 0 or x >= self.tile_layer.x_length or y >= self.tile_layer.y_length:
+            return False
 
-        try:
-            obj = self.object_layer[y][x]
-            tile = self.tile_layer[y][x]
-        except IndexError:
-            return None, None
-        else:
-            return obj, tile
+        return True
 
     def to_json(self, event=None):
         """現在のマップデータを、jsonで出力する。"""

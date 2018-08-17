@@ -148,8 +148,7 @@ class BaseObjectLayer(BaseLayer):
 
         """
         for x, y, tile in self.tile_layer.all():
-            ok, _, _ = material.can_move(x, y)
-            if ok:
+            if tile.is_public(obj=material) and self[y][x] is None:
                 yield x, y
 
     def to_json(self, path):

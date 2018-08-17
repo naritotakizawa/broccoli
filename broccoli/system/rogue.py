@@ -154,20 +154,21 @@ class RogueWithPlayer(RogueLikeSystem):
             self.player.direction = const.UP
             y -= 1
 
-        # 移動可能な座標なら移動し、ターンを進める。移動不可能ならターン経過はなし
-        ok, obj, tile = self.player.can_move(x, y)
-        if ok:
-            self.player.move(tile)
-            try:
-                self.canvas.move_camera(self.player)
-            except Exception:
-                # moveは背景のon_selfを呼び出しますが、その際次マップへ移動している可能性があります。
-                # 次マップへ移動している場合、canvas.move_cameraが参照しているcanvasオブジェクトは
-                # destroy済みで例外が送出され、ここにきます。act_objectsなどの他の処理をする必要はないため、pass
-                pass
-            else:
-                self.act_objects(exclude=[self.player])
-                self.turn += 1
+        if self.canvas.check_position(x, y):
+            tile = self.canvas.tile_layer[y][x]
+            obj = self.canvas.object_layer[y][x]
+            if obj is None and tile.is_public(obj=self.player):
+                self.player.move(tile)
+                try:
+                    self.canvas.move_camera(self.player)
+                except Exception:
+                    # moveは背景のon_selfを呼び出しますが、その際次マップへ移動している可能性があります。
+                    # 次マップへ移動している場合、canvas.move_cameraが参照しているcanvasオブジェクトは
+                    # destroy済みで例外が送出され、ここにきます。act_objectsなどの他の処理をする必要はないため、pass
+                    pass
+                else:
+                    self.act_objects(exclude=[self.player])
+                    self.turn += 1
 
     def attack(self, event):
         """主人公の攻撃処理。"""
@@ -182,10 +183,11 @@ class RogueWithPlayer(RogueLikeSystem):
             y -= 1
 
         # マップの範囲外ならやめる。範囲内なら、とりあえず攻撃させる。素振りなどもしたいかも
-        obj, tile = self.canvas.check_position(x, y)
-        if tile is None:
+        if not self.canvas.check_position(x, y):
             return
 
+        tile = self.canvas.tile_layer[y][x]
+        obj = self.canvas.object_layer[y][x]
         self.player.attack(tile, obj)
         self.canvas.move_camera(self.player)
         self.act_objects(exclude=[self.player])
@@ -267,8 +269,7 @@ class RogueNoPlayer(RogueLikeSystem):
         elif event.char == settings.UP_KEY:
             y -= 1
 
-        obj, tile = self.canvas.check_position(x, y)
-        if tile is None:
+        if not self.canvas.check_position(x, y):
             return
 
         self.x = x

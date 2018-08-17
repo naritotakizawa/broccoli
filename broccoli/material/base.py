@@ -15,7 +15,8 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 
 """
 import inspect
-from broccoli import register
+import random
+from broccoli import register, const
 
 
 class BaseMaterial:
@@ -46,8 +47,9 @@ class BaseMaterial:
         マテリアルを表す名前(name)、今の向き(direction)、向きの差分カウント(diff)などの属性もあります。
 
         """
+        cls = type(self)
         if name is None:
-            self.name = type(self).name
+            self.name = cls.name
         else:
             self.name = name
 
@@ -81,6 +83,39 @@ class BaseMaterial:
 
         # 向きを変えたら、画像もすぐに反映させる。imageはディスクリプタです。
         self.canvas.itemconfig(self.id, image=self.image)
+
+    def get_4_positions(self):
+        """4方向の座標を取得するショートカットメソッドです。
+
+        [
+            (DOWN, self.x, self.y+1),
+            (LEFT, self.x-1, self.y),
+            (RIGHT, self.x+1, self.y),
+            (UP, self.x, self.y - 1),
+        ]
+        といったリストを返します。
+        DOWNなどは向きに直接代入できる定数です。
+        また、その方向がマップの範囲外になる場合は無視されます。
+        空のリストが返ったら、4方向が全てマップの範囲外ということです。
+
+        デフォルトではシャッフルして返しますので、必ずしも下座標から取得できる訳ではありません。
+
+        """
+        positions = [
+            (const.DOWN, self.x, self.y + 1),
+            (const.LEFT, self.x - 1, self.y),
+            (const.RIGHT, self.x + 1, self.y),
+            (const.UP, self.x, self.y - 1),
+        ]
+        result_positions =[]
+        for direction, x, y in positions:
+            # マップの範囲外は無視する
+            if self.canvas.check_position(x, y):
+                result_positions.append(
+                    (direction, x, y)
+                )
+        random.shuffle(result_positions)
+        return result_positions
 
     def get_nearest(self, materials):
         """materialsの中から、自分に最も近いものを返す。"""

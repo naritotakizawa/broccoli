@@ -4,9 +4,8 @@
 Mapクラスにおける、object_layerに格納されるクラス群です。
 
 """
-import random
+
 from broccoli import const
-from broccoli import register
 from broccoli.material.base import BaseMaterial
 
 
@@ -23,54 +22,13 @@ class BaseObject(BaseMaterial):
         else:
             self.kind = kind
 
-    def can_move(self, x, y):
-        """座標が、自分にとって移動可能(配置可能)かどうかをチェックする。"""
-        obj, tile = self.canvas.check_position(x, y)
-        # 背景があり、オブジェクトがなくて、通行可能な背景ならばTrue
-        if tile is not None and obj is None and tile.is_public(self):
-            return True, obj, tile
-        else:
-            return False, None, None
-
-    def get_4_position(self):
-        """4方向の座標を取得するショートカットメソッドです。
-
-        [
-            (DOWN, self.x, self.y+1),
-            (LEFT, self.x-1, self.y),
-            (RIGHT, self.x+1, self.y),
-            (UP, self.x, self.y - 1),
-        ]
-        といったリストを返します。
-        DOWNなどは向きに直接代入できる定数です。
-
-        デフォルトではシャッフルして返しますので、必ずしも下座標から取得できる訳ではありません。
-
-        """
-        positions = [
-            (const.DOWN, self.x, self.y+1),
-            (const.LEFT, self.x-1, self.y),
-            (const.RIGHT, self.x+1, self.y),
-            (const.UP, self.x, self.y-1),
-        ]
-        random.shuffle(positions)
-        return positions
-
-    def can_attack(self, x, y):
-        """座標に、自分が攻撃できる相手がいるかをチェックする。"""
-        obj, tile = self.canvas.check_position(x, y)
-        # 背景があり、オブジェクトがあり、敵対しているならばTrue
-        if tile is not None and obj is not None and self.is_enemy(obj):
-            return True, obj, tile
-        else:
-            return False, None, None
-
 
 def action(self):
     # 4方向に攻撃できそうなのがいれば、攻撃する
-    for direction, x, y in self.get_4_position():
-        ok, obj, tile = self.can_attack(x, y)
-        if ok:
+    for direction, x, y in self.get_4_positions():
+        tile = self.canvas.tile_layer[y][x]
+        obj = self.canvas.object_layer[y][x]
+        if obj is not None and self.is_enemy(obj):
             self.direction = direction
             self.attack(tile, obj)
             break
@@ -92,9 +50,10 @@ def action(self):
 
 def random_walk(self):
     """ランダムに移動する"""
-    for direction, x, y in self.get_4_position():
-        ok, obj, tile = self.can_move(x, y)
-        if ok:
+    for direction, x, y in self.get_4_positions():
+        tile = self.canvas.tile_layer[y][x]
+        obj = self.canvas.object_layer[y][x]
+        if tile.is_public(obj=self) and obj is None:
             self.direction = direction
             self.move(tile)
             break
@@ -207,41 +166,49 @@ def towards(self, material):
     if self.x < material.x:
         x = self.x + 1
         y = self.y
-        ok, obj, tile = self.can_move(x, y)
-        if ok:
-            self.direction = const.RIGHT
-            self.move(tile)
-            return
+        if self.canvas.check_position(x, y):
+            tile = self.canvas.tile_layer[y][x]
+            obj = self.canvas.object_layer[y][x]
+            if tile.is_public(obj=self) and obj is None:
+                self.direction = const.RIGHT
+                self.move(tile)
+                return
 
     # 相手が左側にいる
     if self.x > material.x:
         x = self.x - 1
         y = self.y
-        ok, obj, tile = self.can_move(x, y)
-        if ok:
-            self.direction = const.LEFT
-            self.move(tile)
-            return
+        if self.canvas.check_position(x, y):
+            tile = self.canvas.tile_layer[y][x]
+            obj = self.canvas.object_layer[y][x]
+            if tile.is_public(obj=self) and obj is None:
+                self.direction = const.LEFT
+                self.move(tile)
+                return
 
     # 相手が下側にいる
     if self.y < material.y:
         x = self.x
         y = self.y + 1
-        ok, obj, tile = self.can_move(x, y)
-        if ok:
-            self.direction = const.DOWN
-            self.move(tile)
-            return
+        if self.canvas.check_position(x, y):
+            tile = self.canvas.tile_layer[y][x]
+            obj = self.canvas.object_layer[y][x]
+            if tile.is_public(obj=self) and obj is None:
+                self.direction = const.DOWN
+                self.move(tile)
+                return
 
     # 相手が上側にいる
     if self.y > material.y:
         x = self.x
         y = self.y - 1
-        ok, obj, tile = self.can_move(x, y)
-        if ok:
-            self.direction = const.UP
-            self.move(tile)
-            return
+        if self.canvas.check_position(x, y):
+            tile = self.canvas.tile_layer[y][x]
+            obj = self.canvas.object_layer[y][x]
+            if tile.is_public(obj=self) and obj is None:
+                self.direction = const.UP
+                self.move(tile)
+                return
 
 
 def get_enemies(self, see_x=None, see_y=None):

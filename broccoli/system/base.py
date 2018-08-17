@@ -84,6 +84,7 @@ class BaseSystem:
 
         material.system = self
         material.canvas = self.canvas
+
         # タイルのis_publicとon_selfは、恐らくどんなシステムでも概ね使えることでしょう...
         set_method(material, 'is_public', default=return_true, kwargs=kwargs)
         set_method(material, 'on_self', default=do_nothing, kwargs=kwargs)
