@@ -1,7 +1,7 @@
 from broccoli import const
 
 
-def action(self):
+def rogue_action(self):
     # 4方向に攻撃できそうなのがいれば、攻撃する
     for direction, x, y in self.get_4_positions():
         tile = self.canvas.tile_layer[y][x]
@@ -26,7 +26,7 @@ def action(self):
             self.random_walk()
 
 
-def random_walk(self):
+def rogue_random_walk(self):
     """ランダムに移動する"""
     for direction, x, y in self.get_4_positions():
         tile = self.canvas.tile_layer[y][x]
@@ -37,7 +37,7 @@ def random_walk(self):
             break
 
 
-def move(self, tile):
+def rogue_move(self, tile):
     """移動処理。
 
     実際の移動処理を行い、背景のon_selfを呼び出します。
@@ -79,7 +79,7 @@ def move(self, tile):
     tile.on_self(self)
 
 
-def is_enemy(self, obj):
+def rogue_is_enemy(self, obj):
     """壊れるオブジェクトのデフォルトは、主人公と敵対です。"""
     # 自身がPLAYERなら、ENEMYを敵とみなす
     if self.kind == const.PLAYER:
@@ -99,7 +99,7 @@ def is_enemy(self, obj):
     return False
 
 
-def on_damage(self, tile, obj):
+def rogue_on_damage(self, tile, obj):
     """ダメージをうける。"""
     self.canvas.simple_damage_line(self.x, self.y)
     self.hp -= obj.power
@@ -108,14 +108,14 @@ def on_damage(self, tile, obj):
         self.die(tile, obj)
 
 
-def die(self, tile, obj):
+def rogue_die(self, tile, obj):
     """死んだらキャンバス上から消える"""
     self.system.add_message('{}は倒れた!'.format(self.name))
     self.canvas.delete(self.id)
     self.canvas.object_layer[self.y][self.x] = None
 
 
-def attack(self, tile, obj):
+def rogue_attack(self, tile, obj):
     """攻撃処理。
 
     一般的な流れとしては、まず攻撃モーションを呼び出します。
@@ -138,7 +138,7 @@ def attack(self, tile, obj):
     self.canvas.simple_move(self.id, self.x, self.y)
 
 
-def towards(self, material):
+def rogue_towards(self, material):
     """対象に向かって移動する。"""
     # 相手が右側にいる
     if self.x < material.x:
@@ -189,7 +189,7 @@ def towards(self, material):
                 return
 
 
-def get_enemies(self, see_x=None, see_y=None):
+def rogue_get_enemies(self, see_x=None, see_y=None):
     """自分の周りの敵を返す。
 
     see_x、see_yは範囲です。指定しなければ、デフォルト値としてクラス属性が使われます。

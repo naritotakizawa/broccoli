@@ -1,5 +1,5 @@
 from broccoli import register, const
-from broccoli.funcstions import do_nothing
+from broccoli.funcstions.generic import do_nothing
 from broccoli.material import RogueLikeObject
 from broccoli.img.loader import MultiDirection, NoDirection, MultiDirectionWithDiff, NormalSplite
 

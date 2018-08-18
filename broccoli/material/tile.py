@@ -5,11 +5,11 @@ Canvasクラスにおける、tile_layerに格納されるクラス群です。
 
 """
 from broccoli.material.base import BaseMaterial
-from broccoli.funcstions import generic
+from broccoli.funcstions.generic import return_true, do_nothing
 
 
 class BaseTile(BaseMaterial):
     attrs = {
-        'is_public' : generic.return_true,
-        'on_self' : generic.do_nothing,
+        'is_public' : return_true,
+        'on_self' : do_nothing,
     }

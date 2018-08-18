@@ -21,8 +21,6 @@ from broccoli import const
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
-    name = '名無し'
-    image = None
     attrs = {}
 
     def __init__(self, direction=0, diff=0, name=None, **kwargs):
@@ -74,7 +72,8 @@ class BaseMaterial:
             if callable(value):
                 value = types.MethodType(value, self)
 
-            # クラス属性の空リスト等を使った場合は、他と共有されるのでcopy
+            # クラス属性の空リストや辞書等を使った場合は、他と共有されるのでcopy
+            # ミュータブルなオブジェクト全てに言えるので、いずれ汎用的に。
             if isinstance(value, (list, dict)):
                 value = value.copy()
             setattr(self, key, value)

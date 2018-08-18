@@ -16,6 +16,8 @@ class Register:
 
     def tile(self, tile_cls):
         self.tiles[tile_cls.__name__] = tile_cls
+        from pprint import pprint
+        pprint(tile_cls.__dict__)
         return tile_cls
 
     def object(self, obj_cls):

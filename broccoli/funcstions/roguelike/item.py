@@ -1,4 +1,4 @@
-def use(self):
+def rogue_use(self):
     """使う"""
     self.owner.hp += self.power
     if self.owner.hp >= self.owner.max_hp:

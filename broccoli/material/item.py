@@ -3,8 +3,8 @@
 Mapクラスにおける、item_layerに格納されるクラス群です。
 
 """
+from broccoli.funcstions.roguelike import rogue_use
 from broccoli.material.base import BaseMaterial
-from broccoli.funcstions import roguelike
 
 
 class BaseItem(BaseMaterial):
@@ -18,6 +18,6 @@ class BaseItem(BaseMaterial):
 class RogueLikeItem(BaseItem):
     attrs = {
         'power': 0,
-        'use': roguelike.item.use,
+        'use': rogue_use,
     }
 
