@@ -37,4 +37,5 @@ class RogueLikeObject(BaseObject):
         'towards': rogue_towards,
         'get_enemies': rogue_get_enemies,
     }
+    func_attrs = {'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies'}
 

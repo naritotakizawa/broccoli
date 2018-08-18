@@ -22,6 +22,7 @@ from broccoli import const
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
     attrs = {}
+    func_attrs = {}
 
     def __init__(self, direction=0, diff=0, name=None, **kwargs):
         """初期化処理

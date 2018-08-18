@@ -20,4 +20,4 @@ class RogueLikeItem(BaseItem):
         'power': 0,
         'use': rogue_use,
     }
-
+    func_attrs = {'use'}
