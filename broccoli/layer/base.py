@@ -7,7 +7,6 @@
 """
 import json
 import random
-from broccoli.conf import settings
 
 
 class BaseLayer:
@@ -209,7 +208,7 @@ class BaseItemLayer(BaseLayer):
                 yield x, y
 
     def to_json(self, path):
-        """オブジェクトレイヤーをJSON出力する。"""
+        """アイテムレイヤーをJSON出力する。"""
         data = {
             'layer': [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
         }

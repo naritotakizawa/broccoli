@@ -14,17 +14,18 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 使いたい画像の透過具合(tileの画像内に透過部分があると、表示が上手くされません)などを見ながら使うと良いでしょう。
 
 """
-import inspect
 import random
-from broccoli import register, const
+import types
+from broccoli import const
 
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
     name = '名無し'
     image = None
+    attrs = {}
 
-    def __init__(self, direction=0, diff=0, name=None):
+    def __init__(self, direction=0, diff=0, name=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
@@ -62,6 +63,21 @@ class BaseMaterial:
         # 向きに関する属性
         self._direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
         self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
+
+        for key, value in cls.attrs.items():
+            # kwargs.get(key) or getattr(cls, key, value) のようには書かないでください。
+            # const.PLAYERのように、0などのFalseと評価される値を持つことも往々にしてあります。
+            if key in kwargs:
+                value = kwargs[key]
+            elif hasattr(cls, key):
+                value = getattr(cls, key)
+            if callable(value):
+                value = types.MethodType(value, self)
+
+            # クラス属性の空リスト等を使った場合は、他と共有されるのでcopy
+            if isinstance(value, (list, dict)):
+                value = value.copy()
+            setattr(self, key, value)
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)
@@ -127,61 +143,13 @@ class BaseMaterial:
         return sorted_materials[0]
 
     def to_dict(self):
-        return {
+        result = {
             'direction': self.direction,
             'diff': self.diff,
+            'name': self.name,
         }
-
-    @classmethod
-    def get_class_attrs(cls):
-        """重要なクラス属性を辞書として返します。
-
-        エディタ等で、そのクラスを説明するに足る情報を辞書として返します。
-        nameや、タイルならばonやpublic、システムクラスが「power」などの属性を求めていれば、それも返します。
-
-        具体的には以下のような処理を行います。
-        - 「_」で始まらず
-        - directionとimage属性は除き
-        - クラスの持つメソッド・関数を除く(onやpublicといった、関数にもなりえる属性は返す)
-
-        """
-        result = {}
-        allow_func_names = ('on', 'public')
-        for key, value in inspect.getmembers(cls):
-            if not key.startswith('_') and key != 'direction' and key != 'image':
-                if key in allow_func_names or  not inspect.isroutine(value):
-                    result[key] = value
+        for key, value in self.attrs.items():
+            if callable(value):
+                value = value.__name__
+            result[key] = value
         return result
-
-
-@register.generic
-def do_nothing(self, *args, **kwargs):
-    """何もしません。
-
-    actionやon_selfなどで、何か関数を指定しなければいけないが
-    特にさせたい処理がない場合は、この関数を指定してください。
-
-    """
-    pass
-
-
-@register.generic
-def return_true(self, *args, **kwargs):
-    """Trueを返します。
-
-    is_publicのように、TrueかFalseを返す関数が求められることがあります。
-    この関数は必ずTrueを返します。is_publicに指定したならば、そのタイルは通行可能なタイルとなるでしょう。
-
-    """
-    return True
-
-
-@register.generic
-def return_false(self, *args, **kwargs):
-    """Falseを返します。
-
-    is_publicのように、TrueかFalseを返す関数が求められることがあります。
-    この関数は必ずFalseを返します。is_publicに指定したならば、そのタイルは通行できなくなります。
-
-    """
-    return False

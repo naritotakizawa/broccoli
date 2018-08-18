@@ -6,10 +6,10 @@
 """
 import tkinter as tk
 import tkinter.ttk as ttk
-from broccoli.material.object import *
-from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
 from broccoli.conf import settings
-from .base import BaseSystem, set_method
+from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
+from broccoli.material.object import *
+from .base import BaseSystem
 
 
 class RogueLikeSystem(BaseSystem):
@@ -27,23 +27,6 @@ class RogueLikeSystem(BaseSystem):
 
         self.message_class = message_class
         self.show_item_dialog_class = show_item_dialog_class
-
-    def create_object(self, material_cls, **kwargs):
-        material = super().create_object(material_cls, **kwargs)
-        material.max_hp = material.hp = material_cls.rogue_hp
-        material.power = material_cls.rogue_power
-        material.items = []
-
-        set_method(material, 'rogue_action', rename_attr='action', default=action, kwargs=kwargs)
-        set_method(material, 'rogue_random_walk', rename_attr='random_walk', default=random_walk, kwargs=kwargs)
-        set_method(material, 'rogue_move', rename_attr='move', default=move, kwargs=kwargs)
-        set_method(material, 'rogue_is_enemy', rename_attr='is_enemy', default=is_enemy, kwargs=kwargs)
-        set_method(material, 'rogue_on_damage', rename_attr='on_damage', default=on_damage, kwargs=kwargs)
-        set_method(material, 'rogue_on_die', rename_attr='on_die', default=on_die, kwargs=kwargs)
-        set_method(material, 'rogue_attack', rename_attr='attack', default=attack, kwargs=kwargs)
-        set_method(material, 'rogue_towards', rename_attr='towards', default=towards, kwargs=kwargs)
-        set_method(material, 'rogue_get_enemies', rename_attr='get_enemies', default=get_enemies, kwargs=kwargs)
-        return material
 
     def setup(self):
         # メッセージクラスのインスタンス化
@@ -134,8 +117,10 @@ class RogueWithPlayer(RogueLikeSystem):
     def setup(self,):
         super().setup()
         # プレイヤーがいないとダメ
-        self.player = self.canvas.manager.player
-        self.canvas.object_layer.create_material(material_cls=self.player)
+        self.player = self.canvas.object_layer.create_material(
+            material_cls=self.canvas.manager.player,
+            name='あなた', kind=const.PLAYER
+        )
         self.canvas.move_camera(self.player)  # 主人公位置に合わせて表示部分を動かす
 
     def move(self, event):

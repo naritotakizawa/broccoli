@@ -17,7 +17,7 @@ class SimpleGameManager:
     """
 
     canvas_list = []
-    player_cls = None
+    player = None
 
     # ゲームオーバーメッセージや、マップ名の表示に関する設定
     text_size = 18
@@ -26,8 +26,9 @@ class SimpleGameManager:
     color = settings.DEFAULT_TEXT_COLOR
 
     def __init__(self):
+        cls = type(self)
         self.root = None
-        self.player = None
+        self.player = cls.player
         self.current_canvas = None
         self.current_canvas_index = 0
 
@@ -37,10 +38,6 @@ class SimpleGameManager:
         self.root.title(settings.GAME_TITLE)
         self.root.minsize(settings.GAME_WIDTH, settings.GAME_HEIGHT)
         self.root.maxsize(settings.GAME_WIDTH, settings.GAME_HEIGHT)
-
-    def create_player(self):
-        """プレイヤーの作成と設定"""
-        self.player = self.player_cls(name='あなた', kind=const.PLAYER)
 
     def next_canvas(self, next_canvas_index=None):
         """次のマップを表示する"""
@@ -65,7 +62,6 @@ class SimpleGameManager:
     def start(self):
         """ゲームの開始。インスタンス化後、このメソッドを呼んでください。"""
         self.setup_game()
-        self.create_player()
         self.next_canvas(next_canvas_index=0)
         self.root.mainloop()
 

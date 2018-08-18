@@ -1,7 +1,7 @@
 from broccoli import register
 from broccoli.material import BaseTile
 from broccoli.img.loader import MultiDirection, NoDirection, NormalSplite
-from broccoli.material import only_player, goal, return_false, return_true
+from broccoli.funcstions import return_true, return_false, only_player, goal
 
 
 @register.tile
