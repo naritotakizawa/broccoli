@@ -23,7 +23,7 @@ from broccoli import register
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
     attrs = {}
-    func_attrs = {}
+    func_attrs = []
 
     def __init__(self, direction=0, diff=0, name=None, **kwargs):
         """初期化処理
@@ -49,10 +49,15 @@ class BaseMaterial:
 
         """
         cls = type(self)
+
         if name is None:
             self.name = cls.name
         else:
             self.name = name
+
+        # 向きに関する属性
+        self._direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
+        self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
 
         self.y = None
         self.x = None
@@ -60,10 +65,8 @@ class BaseMaterial:
         self.system = None
         self.id = None
 
-        # 向きに関する属性
-        self._direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
-        self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
-
+        # いくつかのRogueLikeObjectのように、属性が多くなる傾向があるので、それらをforループで設定
+        # 関数は、メソッドとして登録しなおす
         for key, value in cls.attrs.items():
             # kwargs.get(key) or getattr(cls, key, value) のようには書かないでください。
             # const.PLAYERのように、0などのFalseと評価される値を持つことも往々にしてあります。
@@ -149,13 +152,9 @@ class BaseMaterial:
             'diff': self.diff,
             'name': self.name,
         }
-        for key, value in self.attrs.items():
-            if callable(value):
-                for name, func in register.functions.items():
-                    if func == value:
-                        value = name
-                        break
-                else:
-                    raise Exception('登録されていない関数を属性に指定しています。{} - {}'.format(key, value))
+        for key in self.attrs.keys():
+            value = getattr(self, key)
+            if key in self.func_attrs:
+                value = value.name  # 関数のname属性に、registerに登録する名前が入っている
             result[key] = value
         return result

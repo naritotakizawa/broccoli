@@ -13,4 +13,4 @@ class BaseTile(BaseMaterial):
         'is_public' : return_true,
         'on_self' : do_nothing,
     }
-    func_attrs = {'is_public', 'on_self'}
+    func_attrs = ['is_public', 'on_self']

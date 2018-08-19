@@ -11,8 +11,6 @@ class Register:
         self.objects = {}
         self.items = {}
         self.functions = {}
-        self.function_system_categories = {}
-        self.function_attr_categories = {}
 
     def tile(self, tile_cls):
         self.tiles[tile_cls.__name__] = tile_cls
@@ -29,30 +27,19 @@ class Register:
     def function(self, name, system='all', attr='all'):
         def _function(func):
             self.functions[name] = func
-            # systemでの登録
-            category = self.function_system_categories.setdefault(system, set())
-            category.add(
-                (name, func)
-            )
-            # attrでの登録
-            category = self.function_attr_categories.setdefault(attr, set())
-            category.add(
-                (name, func)
-            )
+            func.name = name
+            func.system = system
+            func.attr = attr
             return func
         return _function
 
     def search_functions(self, system=None, attr=None):
-        result = {(name ,func) for name, func in self.functions.items()}
+        result = {func for func in self.functions.values()}
         if system is not None:
-            data = self.function_system_categories.get(system)
-            if data:
-                result = result & data
+            result = {func for func in result if func.system == system}
 
         if attr is not None:
-            data = self.function_attr_categories.get(attr)
-            if data:
-                result = result & data
+            result = {func for func in result if func.attr == attr}
 
         return result
 

@@ -33,5 +33,4 @@ class RogueLikeObject(BaseObject):
         'towards': roguelike.object.towards,
         'get_enemies': roguelike.object.get_enemies,
     }
-    func_attrs = {'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies'}
-
+    func_attrs = ['action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies']

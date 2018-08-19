@@ -20,4 +20,4 @@ class RogueLikeItem(BaseItem):
         'power': 0,
         'use': roguelike.item.use,
     }
-    func_attrs = {'use'}
+    func_attrs = ['use']

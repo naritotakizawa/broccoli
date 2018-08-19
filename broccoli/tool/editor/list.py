@@ -462,11 +462,11 @@ class UserDataFrame(ttk.Frame):
         item_list = ItemList(master=self.note, select_callback=self.item_callback)
         self.note.add(item_list, text='アイテム一覧')
 
-        public_list = PublicList(master=self.note, select_callback=self.public_callback)
-        self.note.add(public_list, text='通行一覧')
+        #public_list = PublicList(master=self.note, select_callback=self.public_callback)
+        #self.note.add(public_list, text='通行一覧')
 
-        on_list = OnList(master=self.note, select_callback=self.on_callback)
-        self.note.add(on_list, text='上に乗った際の処理一覧')
+        #on_list = OnList(master=self.note, select_callback=self.on_callback)
+        #self.note.add(on_list, text='上に乗った際の処理一覧')
 
         self.note.pack(fill='both')
 
