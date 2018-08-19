@@ -17,6 +17,7 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 import random
 import types
 from broccoli import const
+from broccoli import register
 
 
 class BaseMaterial:
@@ -150,6 +151,11 @@ class BaseMaterial:
         }
         for key, value in self.attrs.items():
             if callable(value):
-                value = value.__name__
+                for name, func in register.functions.items():
+                    if func == value:
+                        value = name
+                        break
+                else:
+                    raise Exception('登録されていない関数を属性に指定しています。{} - {}'.format(key, value))
             result[key] = value
         return result
