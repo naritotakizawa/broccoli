@@ -36,7 +36,7 @@ class BaseList(ttk.Frame):
         self.items = {}
         self.create_widgets()
         self.create_tree_item()
-        self.tree.bind('<Double-1>', self.on_select)
+        self.tree.bind('<Double-1>', self.click_item)
 
     def create_widgets(self):
         raise NotImplementedError
@@ -44,13 +44,55 @@ class BaseList(ttk.Frame):
     def create_tree_item(self):
         raise NotImplementedError
 
-    def update_widget(self, item):
+    def update_preview(self, item):
         """リストの項目を選択した際の処理
 
         説明欄やプレビューなどを更新する必要があれば、実装してください。
 
         """
-        pass
+        raise NotImplementedError
+
+    def click_item(self, event):
+        # アイテムを取得し、それをもとにプレビュー欄を展開する
+        # その際、そのプレビュー欄クリックでselect_callbackを呼び出す
+        item_id = self.tree.focus()
+        if item_id:
+            try:
+                item = self.items[item_id]
+            except TypeError:
+                pass
+            else:
+                self.update_description(item)
+                self.update_preview(item)
+
+    def update_description(self, item):
+        """マテリアルのプレビューや、説明を描画する"""
+        des = ''
+        for key, value in item.get_class_attrs().items():
+            des += '{}: {}\n'.format(key, value)
+        self.description.delete('1.0', 'end')
+        self.description.insert('1.0', des)
+
+    def click_preview_material(self, material):
+        """プレビュー欄のアイテムクリックで呼ばれる
+
+        選んだタイルを赤く縁取り、select_callbackにtileを引数に呼び出します。
+
+        """
+        if isinstance(material, (list,)):
+            material = material[0]
+
+        self.canvas.delete('select')
+        self.canvas.create_rectangle(
+            material.x * settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT,
+            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
+            tag='select',
+            outline='red',
+            width=10
+        )
+        self.select_callback(material)
 
 
 class TileList(BaseList):
@@ -90,50 +132,17 @@ class TileList(BaseList):
             item_id = self.tree.insert('', 'end', text=tile_name, open=False)
             self.items[item_id] = tile_cls
 
-    def update_widget(self, item):
-        """マテリアルのプレビューや、説明を描画する"""
-        des = ''
-        for key, value in item.get_class_attrs().items():
-            des += '{}: {}\n'.format(key, value)
-        self.description.delete('1.0', 'end')
-        self.description.insert('1.0', des)
-
+    def update_preview(self, item):
+        """マテリアルのプレビューを作成"""
         # タイルを、プレビュー欄に展開する
         tile_layer = ExpandTileLayer(tile=item)
-        self.canvas_frame = EditorCanvasWithScrollBar(self, tile_layer=tile_layer, click_callback=self.select)
+        self.canvas_frame = EditorCanvasWithScrollBar(
+            self, tile_layer=tile_layer, click_callback=self.click_preview_material,
+            return_kind='tile'
+        )
         self.canvas_frame.grid(row=2, column=0, sticky=STICKY_ALL)
         self.canvas = self.canvas_frame.canvas
         self.canvas.draw_cell_line()
-
-    def on_select(self, event):
-        # アイテムを取得し、それをもとにプレビュー欄を展開する
-        # その際、そのプレビュー欄クリックでselect_callbackを呼び出す
-        item_id = self.tree.focus()
-        if item_id:
-            try:
-                item = self.items[item_id]
-            except TypeError:
-                pass
-            else:
-                self.update_widget(item)
-
-    def select(self, tile, obj, items):
-        """プレビュー欄のタイルクリックで呼ばれる
-
-        選んだタイルを赤く縁取り、select_callbackにtileを引数に呼び出します。
-
-        """
-        self.canvas.delete('select')
-        self.canvas.create_rectangle(
-            tile.x * settings.CELL_WIDTH,
-            tile.y * settings.CELL_HEIGHT,
-            tile.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
-            tile.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
-            tag='select',
-            outline='red',
-            width=10
-        )
-        self.select_callback(tile)
 
 
 class ObjectList(BaseList):
@@ -172,58 +181,24 @@ class ObjectList(BaseList):
             item_id = self.tree.insert('', 'end', text=obj_name, open=False)
             self.items[item_id] = obj_cls
 
-    def update_widget(self, item):
+    def update_preview(self, item):
         """マテリアルのプレビューや、説明を描画する"""
-        des = ''
-        for key, value in item.get_class_attrs().items():
-            des += '{}: {}\n'.format(key, value)
-        self.description.delete('1.0', 'end')
-        self.description.insert('1.0', des)
-
         # オブジェクトを、プレビュー欄に展開するが
         # タイルと違い、オブジェクトを展開するレイヤークラスはないため自力で行う
         i = ExpandTileLayer(tile=item)  # 展開するには長さを調べる必要があるので、ExpandTileBackgroudnを利用
         x = i.x_length
         y = i.y_length
         tile_layer = SimpleTileLayer(x_length=x, y_length=y, outer_tile=TestTile, inner_tile=TestTile)
-        self.canvas_frame = EditorCanvasWithScrollBar(self, tile_layer=tile_layer, click_callback=self.select)
+        self.canvas_frame = EditorCanvasWithScrollBar(
+            self, tile_layer=tile_layer, click_callback=self.click_preview_material,
+            return_kind='object'
+        )
         self.canvas_frame.grid(row=2, column=0, sticky=STICKY_ALL)
         self.canvas = self.canvas_frame.canvas
         self.canvas.draw_cell_line()
         for y, row in enumerate(self.canvas.tile_layer):
             for x, col in enumerate(row):
                 self.canvas.object_layer.create_material(material_cls=item, x=x, y=y, direction=y, diff=x)
-
-    def on_select(self, event):
-        # アイテムを取得し、それをもとにプレビュー欄を展開する
-        # その際、そのプレビュー欄クリックでselect_callbackを呼び出す
-        # ただし、「選択なし」を選択したらすぐにselect_callback呼び出し。
-        item_id = self.tree.focus()
-        if item_id:
-            try:
-                item = self.items[item_id]
-            except TypeError:
-                pass
-            else:
-                self.update_widget(item)
-
-    def select(self, tile, obj, items):
-        """プレビュー欄のオブジェクトクリックで呼ばれる
-
-        選んだオブジェクトを赤く縁取り、select_callbackにobjectを引数に呼び出します。
-
-        """
-        self.canvas.delete('select')
-        self.canvas.create_rectangle(
-            tile.x * settings.CELL_WIDTH,
-            tile.y * settings.CELL_HEIGHT,
-            tile.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
-            tile.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
-            tag='select',
-            outline='red',
-            width=10
-        )
-        self.select_callback(obj)
 
 
 class ItemList(BaseList):
@@ -262,59 +237,24 @@ class ItemList(BaseList):
             item_id = self.tree.insert('', 'end', text=obj_name, open=False)
             self.items[item_id] = obj_cls
 
-    def update_widget(self, item):
+    def update_preview(self, item):
         """マテリアルのプレビューや、説明を描画する"""
-        des = ''
-        for key, value in item.get_class_attrs().items():
-            des += '{}: {}\n'.format(key, value)
-        self.description.delete('1.0', 'end')
-        self.description.insert('1.0', des)
-
         # アイテム、プレビュー欄に展開するが
         # タイルと違い、アイテムを展開するレイヤークラスはないため自力で行う
         i = ExpandTileLayer(tile=item)  # 展開するには長さを調べる必要があるので、ExpandTileBackgroudnを利用
         x = i.x_length
         y = i.y_length
         tile_layer = SimpleTileLayer(x_length=x, y_length=y, outer_tile=TestTile, inner_tile=TestTile)
-        self.canvas_frame = EditorCanvasWithScrollBar(self, tile_layer=tile_layer, click_callback=self.select)
+        self.canvas_frame = EditorCanvasWithScrollBar(
+            self, tile_layer=tile_layer, click_callback=self.click_preview_material,
+            return_kind='item'
+        )
         self.canvas_frame.grid(row=2, column=0, sticky=STICKY_ALL)
         self.canvas = self.canvas_frame.canvas
         self.canvas.draw_cell_line()
         for y, row in enumerate(self.canvas.tile_layer):
             for x, col in enumerate(row):
                 self.canvas.item_layer.create_material(material_cls=item, x=x, y=y, direction=y, diff=x)
-
-    def on_select(self, event):
-        # アイテムを取得し、それをもとにプレビュー欄を展開する
-        # その際、そのプレビュー欄クリックでselect_callbackを呼び出す
-        # ただし、「選択なし」を選択したらすぐにselect_callback呼び出し。
-        item_id = self.tree.focus()
-        if item_id:
-            try:
-                item = self.items[item_id]
-            except TypeError:
-                pass
-            else:
-                self.update_widget(item)
-
-    def select(self, tile, obj, items):
-        """プレビュー欄のオブジェクトクリックで呼ばれる
-
-        選んだオブジェクトを赤く縁取り、select_callbackにobjectを引数に呼び出します。
-
-        """
-        self.canvas.delete('select')
-        self.canvas.create_rectangle(
-            tile.x * settings.CELL_WIDTH,
-            tile.y * settings.CELL_HEIGHT,
-            tile.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
-            tile.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
-            tag='select',
-            outline='red',
-            width=10
-        )
-        self.select_callback(items)
-
 
 
 class UserDataFrame(ttk.Frame):

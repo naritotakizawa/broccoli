@@ -33,13 +33,14 @@ class EditorCanvas(GameCanvas2D):
 
     """
 
-    def __init__(self, master=None, tile_layer=None, click_callback=None, **kwargs):
+    def __init__(self, master=None, tile_layer=None, click_callback=None, return_kind='all', **kwargs):
         # tile_layerがNoneの場合は、仮のタイルを使ったSimpleTileLayerを利用する
         if tile_layer is None:
             tile_layer = SimpleTileLayer(x_length=10, y_length=10, inner_tile=TestTile, outer_tile=TestTile)
         super().__init__(master=master, tile_layer=tile_layer)
 
         self.click_callback = click_callback
+        self.return_kind = return_kind
         if click_callback is not None:
             self.bind('<1>', self.click)
 
@@ -63,33 +64,34 @@ class EditorCanvas(GameCanvas2D):
         except TypeError:
             pass
         else:
-            try:
-                tile = self.tile_layer[y][x]
-            except IndexError:
-                tile = None
-            try:
-                obj = self.object_layer[y][x]
-            except IndexError:
-                obj = None
-            try:
-                items = self.item_layer[y][x]
-            except IndexError:
-                items = None
-
-            self.click_callback(tile=tile, obj=obj, items=items)
+            tile = self.tile_layer[y][x]
+            obj = self.object_layer[y][x]
+            items = self.item_layer[y][x]
+            if self.return_kind == 'tile':
+                self.click_callback(tile)
+            elif self.return_kind == 'object':
+                self.click_callback(obj)
+            elif self.return_kind == 'item':
+                self.click_callback(items)
+            else:
+                self.click_callback(tile, obj, items)
 
 
 class EditorCanvasWithScrollBar(ttk.Frame):
     """EditorCanvasに、スクロールバーをつけたttk.Frame"""
 
-    def __init__(self, master=None, tile_layer=None, click_callback=None, **kwargs):
+    def __init__(self, master=None, tile_layer=None, click_callback=None, return_kind='all', **kwargs):
         super().__init__(master=master, **kwargs)
         self.click_callback = click_callback
+        self.return_kind = return_kind
         self.tile_layer = tile_layer
         self.create_widgets()
 
     def create_widgets(self):
-        self.canvas = EditorCanvas(self, tile_layer=self.tile_layer, click_callback=self.click_callback)
+        self.canvas = EditorCanvas(
+            self, tile_layer=self.tile_layer, click_callback=self.click_callback,
+            return_kind=self.return_kind
+        )
         self.canvas.grid(row=0, column=0, sticky=STICKY_ALL)
         scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL, command=self.canvas.xview)
         scroll_x.grid(row=1, column=0, sticky=(tk.E, tk.W))
@@ -100,8 +102,8 @@ class EditorCanvasWithScrollBar(ttk.Frame):
         self.rowconfigure(0, weight=1)
 
 
-def debug(**kwargs):
-    print(*kwargs.values())
+def debug(*args):
+    print(args)
 
 
 def main():

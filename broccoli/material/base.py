@@ -161,7 +161,7 @@ class BaseMaterial:
         result = {
             'name': cls.name,
         }
-        for key in cls.attrs:
-            value = getattr(cls, key)
-            result[key] = value
+        for attr_name in cls.attrs:
+            value = getattr(cls, attr_name)
+            result[attr_name] = value
         return result
