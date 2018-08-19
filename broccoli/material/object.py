@@ -15,22 +15,25 @@ class BaseObject(BaseMaterial):
 
 
 class RogueLikeObject(BaseObject):
-    attrs = {
-        'see_x': 2,
-        'see_y': 2,
-        'kind': const.NEUTRAL,
-        'hp': -1,
-        'max_hp': -1,
-        'power': -1,
-        'items': [],
-        'action': roguelike.object.action,
-        'move': roguelike.object.move,
-        'attack': roguelike.object.attack,
-        'random_walk': roguelike.object.random_walk,
-        'is_enemy': roguelike.object.is_enemy,
-        'on_damage': roguelike.object.on_damage,
-        'die': roguelike.object.die,
-        'towards': roguelike.object.towards,
-        'get_enemies': roguelike.object.get_enemies,
-    }
+    see_x = 2
+    see_y = 2
+    kind = const.NEUTRAL
+    hp = -1
+    max_hp = -1
+    power = -1
+    items = []
+    action = roguelike.object.action
+    move = roguelike.object.move
+    attack = roguelike.object.attack
+    random_walk = roguelike.object.random_walk
+    is_enemy = roguelike.object.is_enemy
+    on_damage = roguelike.object.on_damage
+    die = roguelike.object.die
+    towards = roguelike.object.towards
+    get_enemies = roguelike.object.get_enemies
+
+    attrs = [
+        'see_x', 'see_y', 'kind', 'hp', 'max_hp', 'power', 'items',
+        'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies'
+    ]
     func_attrs = ['action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies']

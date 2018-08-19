@@ -16,8 +16,8 @@ class BaseItem(BaseMaterial):
 
 
 class RogueLikeItem(BaseItem):
-    attrs = {
-        'power': 0,
-        'use': roguelike.item.use,
-    }
+    power = 0
+    use = roguelike.item.use
+
+    attrs = ['power', 'use']
     func_attrs = ['use']

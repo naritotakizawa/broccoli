@@ -22,7 +22,7 @@ from broccoli import register
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
-    attrs = {}
+    attrs = []
     func_attrs = []
 
     def __init__(self, direction=0, diff=0, name=None, **kwargs):
@@ -65,23 +65,20 @@ class BaseMaterial:
         self.system = None
         self.id = None
 
-        # いくつかのRogueLikeObjectのように、属性が多くなる傾向があるので、それらをforループで設定
-        # 関数は、メソッドとして登録しなおす
-        for key, value in cls.attrs.items():
-            # kwargs.get(key) or getattr(cls, key, value) のようには書かないでください。
-            # const.PLAYERのように、0などのFalseと評価される値を持つことも往々にしてあります。
-            if key in kwargs:
-                value = kwargs[key]
-            elif hasattr(cls, key):
-                value = getattr(cls, key)
-            if callable(value):
+        for attr_name in cls.attrs:
+            if attr_name in kwargs:
+                value = kwargs[attr_name]
+            else:
+                value = getattr(cls, attr_name)
+
+            if attr_name in self.func_attrs:
                 value = types.MethodType(value, self)
 
             # クラス属性の空リストや辞書等を使った場合は、他と共有されるのでcopy
             # ミュータブルなオブジェクト全てに言えるので、いずれ汎用的に。
             if isinstance(value, (list, dict)):
                 value = value.copy()
-            setattr(self, key, value)
+            setattr(self, attr_name, value)
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)
@@ -152,9 +149,19 @@ class BaseMaterial:
             'diff': self.diff,
             'name': self.name,
         }
-        for key in self.attrs.keys():
-            value = getattr(self, key)
-            if key in self.func_attrs:
+        for attr_name in self.attrs:
+            value = getattr(self, attr_name)
+            if attr_name in self.func_attrs:
                 value = value.name  # 関数のname属性に、registerに登録する名前が入っている
+            result[attr_name] = value
+        return result
+
+    @classmethod
+    def get_class_attrs(cls):
+        result = {
+            'name': cls.name,
+        }
+        for key in cls.attrs:
+            value = getattr(cls, key)
             result[key] = value
         return result

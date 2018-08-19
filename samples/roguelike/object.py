@@ -52,7 +52,7 @@ class NormalBison(RogueLikeObject):
 @register.object
 class Camel(RogueLikeObject):
     name = 'らくだ'
-    image = NormalSplite('img/RogueLikeObject/camel/camel_1.png')
+    image = NormalSplite('img/character/camel/camel_1.png')
     hp = max_hp = 17
     power = 7
     kind = const.ENEMY

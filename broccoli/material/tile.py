@@ -9,8 +9,8 @@ from broccoli.funcstions.generic import return_true, do_nothing
 
 
 class BaseTile(BaseMaterial):
-    attrs = {
-        'is_public' : return_true,
-        'on_self' : do_nothing,
-    }
+    is_public = return_true
+    on_self = do_nothing
+
+    attrs = ['is_public', 'on_self']
     func_attrs = ['is_public', 'on_self']
