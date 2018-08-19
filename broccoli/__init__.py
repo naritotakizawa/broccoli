@@ -10,14 +10,12 @@ class Register:
         self.tiles = {}
         self.objects = {}
         self.items = {}
-        self.public_funcs = {}
-        self.on_funcs = {}
-        self.generic_funcs = {}
+        self.functions = {}
+        self.function_system_categories = {}
+        self.function_attr_categories = {}
 
     def tile(self, tile_cls):
         self.tiles[tile_cls.__name__] = tile_cls
-        from pprint import pprint
-        pprint(tile_cls.__dict__)
         return tile_cls
 
     def object(self, obj_cls):
@@ -28,17 +26,36 @@ class Register:
         self.items[item_cls.__name__] = item_cls
         return item_cls
 
-    def public(self, func):
-        self.public_funcs[func.__name__] = func
-        return func
+    def function(self, name, system='all', attr='all'):
+        def _function(func):
+            self.functions[name] = func
+            # systemでの登録
+            category = self.function_system_categories.setdefault(system, set())
+            category.add(
+                (name, func)
+            )
+            # attrでの登録
+            category = self.function_attr_categories.setdefault(attr, set())
+            category.add(
+                (name, func)
+            )
+            return func
+        return _function
 
-    def on(self, func):
-        self.on_funcs[func.__name__] = func
-        return func
+    def search_functions(self, system=None, attr=None):
+        result = {(name ,func) for name, func in self.functions.items()}
+        if system is not None:
+            data = self.function_system_categories.get(system)
+            if data:
+                result = result & data
 
-    def generic(self, func):
-        self.generic_funcs[func.__name__] = func
-        return func
+        if attr is not None:
+            data = self.function_attr_categories.get(attr)
+            if data:
+                result = result & data
+
+        return result
 
 
 register = Register()
+from broccoli import funcstions  # import broccoliとされた時点で、registerに登録すべき関数をロードしにいく

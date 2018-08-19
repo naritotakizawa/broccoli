@@ -1,7 +1,7 @@
 from .tile import *
 
 
-@register.generic
+@register.function(name='generic.do_nothing', system='all', attr='all')
 def do_nothing(self, *args, **kwargs):
     """何もしません。
 
@@ -12,7 +12,7 @@ def do_nothing(self, *args, **kwargs):
     pass
 
 
-@register.generic
+@register.function(name='generic.return_true', system='all', attr='all')
 def return_true(self, *args, **kwargs):
     """Trueを返します。
 
@@ -23,7 +23,7 @@ def return_true(self, *args, **kwargs):
     return True
 
 
-@register.generic
+@register.function(name='generic.return_false', system='all', attr='all')
 def return_false(self, *args, **kwargs):
     """Falseを返します。
 

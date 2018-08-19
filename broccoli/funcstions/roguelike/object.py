@@ -1,7 +1,9 @@
+from broccoli import register
 from broccoli import const
 
 
-def rogue_action(self):
+@register.function(name='roguelike.object.action', system='roguelike', attr='action')
+def action(self):
     # 4方向に攻撃できそうなのがいれば、攻撃する
     for direction, x, y in self.get_4_positions():
         tile = self.canvas.tile_layer[y][x]
@@ -26,7 +28,8 @@ def rogue_action(self):
             self.random_walk()
 
 
-def rogue_random_walk(self):
+@register.function(name='roguelike.object.random_walk', system='roguelike', attr='random_walk')
+def random_walk(self):
     """ランダムに移動する"""
     for direction, x, y in self.get_4_positions():
         tile = self.canvas.tile_layer[y][x]
@@ -37,7 +40,8 @@ def rogue_random_walk(self):
             break
 
 
-def rogue_move(self, tile):
+@register.function(name='roguelike.object.move', system='roguelike', attr='move')
+def move(self, tile):
     """移動処理。
 
     実際の移動処理を行い、背景のon_selfを呼び出します。
@@ -79,7 +83,8 @@ def rogue_move(self, tile):
     tile.on_self(self)
 
 
-def rogue_is_enemy(self, obj):
+@register.function(name='roguelike.object.is_enemy', system='roguelike', attr='is_enemy')
+def is_enemy(self, obj):
     """壊れるオブジェクトのデフォルトは、主人公と敵対です。"""
     # 自身がPLAYERなら、ENEMYを敵とみなす
     if self.kind == const.PLAYER:
@@ -99,7 +104,8 @@ def rogue_is_enemy(self, obj):
     return False
 
 
-def rogue_on_damage(self, tile, obj):
+@register.function(name='roguelike.object.on_damage', system='roguelike', attr='on_damage')
+def on_damage(self, tile, obj):
     """ダメージをうける。"""
     self.canvas.simple_damage_line(self.x, self.y)
     self.hp -= obj.power
@@ -108,14 +114,16 @@ def rogue_on_damage(self, tile, obj):
         self.die(tile, obj)
 
 
-def rogue_die(self, tile, obj):
+@register.function(name='roguelike.object.die', system='roguelike', attr='die')
+def die(self, tile, obj):
     """死んだらキャンバス上から消える"""
     self.system.add_message('{}は倒れた!'.format(self.name))
     self.canvas.delete(self.id)
     self.canvas.object_layer[self.y][self.x] = None
 
 
-def rogue_attack(self, tile, obj):
+@register.function(name='roguelike.object.attack', system='roguelike', attr='attack')
+def attack(self, tile, obj):
     """攻撃処理。
 
     一般的な流れとしては、まず攻撃モーションを呼び出します。
@@ -138,7 +146,8 @@ def rogue_attack(self, tile, obj):
     self.canvas.simple_move(self.id, self.x, self.y)
 
 
-def rogue_towards(self, material):
+@register.function(name='roguelike.object.towards', system='roguelike', attr='towards')
+def towards(self, material):
     """対象に向かって移動する。"""
     # 相手が右側にいる
     if self.x < material.x:
@@ -189,7 +198,8 @@ def rogue_towards(self, material):
                 return
 
 
-def rogue_get_enemies(self, see_x=None, see_y=None):
+@register.function(name='roguelike.object.get_enemies', system='roguelike', attr='get_enemies')
+def get_enemies(self, see_x=None, see_y=None):
     """自分の周りの敵を返す。
 
     see_x、see_yは範囲です。指定しなければ、デフォルト値としてクラス属性が使われます。

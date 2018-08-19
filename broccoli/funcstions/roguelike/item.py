@@ -1,4 +1,8 @@
-def rogue_use(self):
+from broccoli import register
+
+
+@register.function(name='roguelike.item.use', system='roguelike', attr='use')
+def use(self):
     """使う"""
     self.owner.hp += self.power
     if self.owner.hp >= self.owner.max_hp:
