@@ -59,12 +59,9 @@ class BaseMaterial:
         self._direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
         self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
 
-        self.y = None
-        self.x = None
-        self.canvas = None
-        self.system = None
-        self.id = None
-
+        # マテリアルインスタンスの属性を設定
+        # kwargsにあればそれを、そうでなければクラス属性を設定
+        # 更に関数ならば、メソッドとして灯籠
         for attr_name in cls.attrs:
             if attr_name in kwargs:
                 value = kwargs[attr_name]
@@ -79,6 +76,12 @@ class BaseMaterial:
             if isinstance(value, (list, dict)):
                 value = value.copy()
             setattr(self, attr_name, value)
+
+        self.y = None
+        self.x = None
+        self.canvas = None
+        self.system = None
+        self.id = None
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)
