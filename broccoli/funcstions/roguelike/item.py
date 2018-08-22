@@ -1,7 +1,7 @@
 from broccoli import register
 
 
-@register.function(name='roguelike.item.use', system='roguelike', attr='use')
+@register.function('roguelike.item.healing_use', system='roguelike', attr='use', material='item')
 def healing_use(self):
     """使う"""
     self.owner.hp += self.power

@@ -14,10 +14,10 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 使いたい画像の透過具合(tileの画像内に透過部分があると、表示が上手くされません)などを見ながら使うと良いでしょう。
 
 """
+import inspect
 import random
 import types
 from broccoli import const
-from broccoli import register
 
 
 class BaseMaterial:
@@ -69,12 +69,13 @@ class BaseMaterial:
                 value = getattr(cls, attr_name)
 
             if attr_name in self.func_attrs:
-                value = types.MethodType(value, self)
+                value = self.create_method(value)
 
             # クラス属性の空リストや辞書等を使った場合は、他と共有されるのでcopy
             # ミュータブルなオブジェクト全てに言えるので、いずれ汎用的に。
             if isinstance(value, (list, dict)):
                 value = value.copy()
+
             setattr(self, attr_name, value)
 
         self.y = None
@@ -168,3 +169,26 @@ class BaseMaterial:
             value = getattr(cls, attr_name)
             result[attr_name] = value
         return result
+
+    def get_instance_attrs(self):
+        result = {
+            'direction': self.direction,
+            'diff': self.diff,
+            'name': self.name,
+        }
+        for attr_name in self.attrs:
+            value = getattr(self, attr_name)
+            result[attr_name] = value
+        return result
+
+    def copy(self):
+        cls = type(self)
+        kwargs = self.get_instance_attrs()
+        return cls(**kwargs)
+
+    def create_method(self, func):
+        # 既にメソッドだった場合はそのままにする
+        # 既にメソッドになっているケースとしては、copyでの複製インスタンス化時
+        if not inspect.ismethod(func):
+            func = types.MethodType(func, self)
+        return func

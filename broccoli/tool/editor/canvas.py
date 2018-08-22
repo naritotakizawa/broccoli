@@ -55,6 +55,17 @@ class EditorCanvas(GameCanvas2D):
                 tag='line'
             )
 
+    def create_red_line(self, material):
+        self.create_rectangle(
+            material.x * settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT,
+            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
+            tag='redline',
+            outline='red',
+            width=10
+        )
+
     def click(self, event):
         """クリックされた座標の背景、タイルを返す"""
         canvas_x = self.canvasx(event.x)

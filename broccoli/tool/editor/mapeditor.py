@@ -5,15 +5,62 @@ from tkinter import filedialog
 from broccoli import register
 from broccoli.conf import settings
 from broccoli.layer import RandomTileLayer, SimpleTileLayer, JsonTileLayer, JsonObjectLayer, ExpandTileLayer, JsonItemLayer
+from broccoli.material import BaseObject, BaseItem, BaseTile
 from .list import UserDataFrame
 from .canvas import EditorCanvasWithScrollBar
+from .search import SearchFrame
 
 STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
-TILE = 0
-OBJECT = 1
-ITEM = 2
-PUBLIC_FNC = 3
-ON_FUNC = 4
+
+
+class CustomHighLight(tk.Toplevel):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.select = None
+        self.material_var = tk.StringVar()
+        self.attr_var = tk.StringVar()
+        self.create_widgets()
+
+    def create_widgets(self):
+        search = SearchFrame(self,select_callback=self.select_function)
+        search.grid(row=0, column=0, sticky=STICKY_ALL, columnspan=2)
+
+        ttk.Label(self, text='マテリアル').grid(column=0, row=1, sticky=STICKY_ALL)
+        ttk.Combobox(self, textvariable=self.material_var, values=['タイル', 'オブジェクト', 'アイテム']).grid(column=1, row=1, sticky=STICKY_ALL)
+
+        ttk.Label(self, text='属性').grid(column=0, row=2, sticky=STICKY_ALL)
+        ttk.Combobox(self, textvariable=self.attr_var, values=list(register.func_attr_category)).grid(column=1, row=2, sticky=STICKY_ALL)
+
+        ttk.Button(self, text='ハイライト', command=self.highlight).grid(column=0, row=3, sticky=STICKY_ALL, columnspan=2)
+
+    def select_function(self, func):
+        self.select = func
+
+    def highlight(self):
+        func = self.select
+        attr = self.attr_var.get()
+        canvas = self.master.canvas_frame.canvas
+        canvas.delete('redline')
+        kind = self.material_var.get()
+        if kind == 'タイル':
+            for x, y, material in canvas.tile_layer.all(include_none=False):
+                material_attr = getattr(material, attr, None)
+                if material_attr and material_attr.name == func.name:
+                    canvas.create_red_line(material)
+
+        elif kind == 'オブジェクト':
+            for x, y, material in canvas.object_layer.all(include_none=False):
+                material_attr = getattr(material, attr, None)
+                if material_attr and material_attr.name == func.name:
+                    canvas.create_red_line(material)
+
+        elif kind == 'アイテム':
+            for x, y, materials in canvas.item_layer.all(include_none=False):
+                for material in materials:
+                    material_attr = getattr(material, attr, None)
+                    if material_attr and material_attr.name == func.name:
+                        canvas.create_red_line(material)
 
 
 class MapEditorConfig(ttk.Frame):
@@ -78,12 +125,15 @@ class MapEditorConfig(ttk.Frame):
         ttk.Frame(self, height=30, relief=tk.SUNKEN).grid(column=0, row=16, sticky=STICKY_ALL, columnspan=2)
 
         # 各種タイルの強調
-        ttk.Button(self, text='通行可能タイルを強調(public=True)', command=self.master.show_public).grid(column=0, row=17, sticky=STICKY_ALL, columnspan=2)
-        ttk.Button(self, text='通行不可タイルを強調(public=False)', command=self.master.show_private).grid(column=0, row=18, sticky=STICKY_ALL, columnspan=2)
-        ttk.Button(self, text='特殊通行タイルを強調(public=function)', command=self.master.show_public_func_tile).grid(column=0, row=19, sticky=STICKY_ALL, columnspan=2)
-        ttk.Button(self, text='イベントタイルを強調(on=function)', command=self.master.show_on_func_tile).grid(column=0, row=20, sticky=STICKY_ALL, columnspan=2)
-        ttk.Button(self, text='マス目をつける', command=self.master.show_line).grid(column=0, row=21, sticky=STICKY_ALL, columnspan=2)
-        ttk.Button(self, text='強調マーカーを削除', command=self.master.delete_show_marker).grid(column=0, row=22,sticky=STICKY_ALL, columnspan=2)
+        ttk.Button(self, text='通行可能タイルを表示(is_public=return_true)', command=self.master.show_public).grid(column=0, row=17, sticky=STICKY_ALL)
+        ttk.Button(self, text='通行不可タイルを表示(is_public=return_false)', command=self.master.show_private).grid(column=1, row=17, sticky=STICKY_ALL)
+        ttk.Button(self, text='カスタムハイライト', command=self.master.show_custom).grid(column=0, row=18, columnspan=2, sticky=STICKY_ALL)
+
+        ttk.Frame(self, height=30, relief=tk.SUNKEN).grid(column=0, row=19, sticky=STICKY_ALL, columnspan=2)
+
+        ttk.Button(self, text='マス目をつける', command=self.master.show_mass).grid(column=0, row=20, sticky=STICKY_ALL)
+        ttk.Button(self, text='マス目を消す', command=self.master.delete_mass).grid(column=1, row=20, sticky=STICKY_ALL)
+        ttk.Button(self, text='赤線を削除', command=self.master.delete_show_marker).grid(column=0, row=21,sticky=STICKY_ALL, columnspan=2)
 
 
 class MapEditor(ttk.Frame):
@@ -104,7 +154,6 @@ class MapEditor(ttk.Frame):
             master=self,
             tile_callback=self.select_tile, obj_callback=self.select_obj,
             item_callback=self.select_item,
-            public_callback=self.select_public, on_callback=self.select_on
         )
         self.canvas_frame = EditorCanvasWithScrollBar(master=self, click_callback=self.click_canvas)
         self.config = MapEditorConfig(master=self)
@@ -123,73 +172,34 @@ class MapEditor(ttk.Frame):
     def select_tile(self, tile):
         """タイルを選択された際に呼び出される"""
         self.select = tile
-        self.kind = TILE
 
     def select_obj(self, obj):
         """オブジェクトを選択された際に呼び出される"""
         self.select = obj
-        self.kind = OBJECT
 
-    def select_item(self, items):
+    def select_item(self, item):
         """アイテム選択された際に呼び出される"""
-        if items is None:
-            self.select = None
-        else:
-            self.select = items[0]
-        self.kind = ITEM
+        self.select = item
 
-    def select_public(self, public_func):
-        """タイルのパブリック関数を選択サれたら呼ばれる"""
-        self.select = public_func
-        self.kind = PUBLIC_FNC
-
-    def select_on(self, on_func):
-        """タイルのon関数を詮索されたら呼ばれる"""
-        self.select = on_func
-        self.kind = ON_FUNC
-
-    def click_canvas(self, obj, tile, items):
+    def click_canvas(self, tile, obj, items):
         """作成中キャンバス欄をクリックされたら呼ばれる"""
         x, y = tile.x, tile.y
-        if self.kind == TILE:
+        if isinstance(self.select, BaseTile):
             self.canvas_frame.canvas.delete(tile.id)
-            direction = self.select.direction
-            diff = self.select.diff
-            cls = self.select.__class__
             self.canvas_frame.canvas.tile_layer.create_material(
-                material_cls=cls, x=x, y=y,
-                direction=direction, diff=diff
+                material_cls=self.select.copy(), x=x, y=y,
             )
-        elif self.kind == OBJECT:
+        elif isinstance(self.select, BaseObject):
             if obj is not None:
                 self.canvas_frame.canvas.delete(obj.id)
-                self.canvas_frame.canvas.object_layer[obj.y][obj.x] = None
-            if self.select is not None:
-                direction = self.select.direction
-                diff = self.select.diff
-                cls = self.select.__class__
-                self.canvas_frame.canvas.object_layer.create_material(
-                    material_cls=cls, x=x, y=y,
-                    direction=direction, diff=diff
-                )
-        elif self.kind == ITEM:
-            if self.select is None:
-                for item in self.canvas_frame.canvas.item_layer[tile.y][tile.x]:
-                    self.canvas_frame.canvas.delete(item.id)
-                self.canvas_frame.canvas.item_layer[tile.y][tile.x] = []
-            else:
-                direction = self.select.direction
-                diff = self.select.diff
-                cls = self.select.__class__
-                self.canvas_frame.canvas.item_layer.create_material(
-                    material_cls=cls, x=x, y=y,
-                    direction=direction, diff=diff
-                )
-        elif self.kind == ON_FUNC:
-            tile.on = self.select
-
-        elif self.kind == PUBLIC_FNC:
-            tile.public = self.select
+                self.canvas_frame.canvas.object_layer[y][x] = None
+            self.canvas_frame.canvas.object_layer.create_material(
+                material_cls=self.select.copy(), x=x, y=y,
+            )
+        elif isinstance(self.select, BaseItem):
+            self.canvas_frame.canvas.item_layer.create_material(
+                material_cls=self.select.copy(), x=x, y=y,
+            )
 
         else:
             raise Exception('選択中のタイル、オブジェクト、関数がありません。')
@@ -261,50 +271,33 @@ class MapEditor(ttk.Frame):
 
     def show_public(self):
         """通行可能タイルを強調ボタンで呼ばれる"""
-        for x, y, tile in self.canvas_frame.canvas.tile_layer.all():
-            if tile.public is True:
-                center_x = x * settings.CELL_WIDTH + settings.CELL_WIDTH/2
-                center_y = y * settings.CELL_HEIGHT + settings.CELL_HEIGHT/2
-                self.canvas_frame.canvas.create_text(center_x, center_y, text='通れる!', tag='show', anchor='center')
+        self.canvas_frame.canvas.delete('redline')
+        for x, y, tile in self.canvas_frame.canvas.tile_layer.all(include_none=False):
+            if tile.is_public.name == 'generic.return_true':
+                self.canvas_frame.canvas.create_red_line(tile)
 
     def show_private(self):
         """通行不可タイルを強調で呼ばれる"""
-        for x, y, tile in self.canvas_frame.canvas.tile_layer.all():
-            if tile.public is False:
-                center_x = x * settings.CELL_WIDTH + settings.CELL_WIDTH/2
-                center_y = y * settings.CELL_HEIGHT + settings.CELL_HEIGHT/2
-                self.canvas_frame.canvas.create_text(center_x, center_y, text='通れない!', tag='show', anchor='center')
+        self.canvas_frame.canvas.delete('redline')
+        for x, y, tile in self.canvas_frame.canvas.tile_layer.all(include_none=False):
+            if tile.is_public.name == 'generic.return_false':
+                self.canvas_frame.canvas.create_red_line(tile)
 
-    def show_public_func_tile(self):
-        """特殊通行タイルを強調で呼ばれる"""
-        for x, y, tile in self.canvas_frame.canvas.tile_layer.all():
-            if tile.public is not False and tile.public is not True:
-                center_x = x * settings.CELL_WIDTH + settings.CELL_WIDTH/2
-                center_y = y * settings.CELL_HEIGHT + settings.CELL_HEIGHT/2
-                self.canvas_frame.canvas.create_text(center_x, center_y, text=tile.public.__name__, tag='show', anchor='center')
-
-    def show_on_func_tile(self):
-        """イベントタイルを強調で呼ばれる"""
-        for x, y, tile in self.canvas_frame.canvas.tile_layer.all():
-            if tile.on is not None:
-                center_x = x * settings.CELL_WIDTH + settings.CELL_WIDTH/2
-                center_y = y * settings.CELL_HEIGHT + settings.CELL_HEIGHT/2
-                self.canvas_frame.canvas.create_text(center_x, center_y, text=tile.on.__name__, tag='show', anchor='center')
-
-    def show_line(self):
+    def show_mass(self):
         """マス目をつけるで呼ばれる"""
-        for x, y, tile in self.canvas_frame.canvas.tile_layer.all():
-            self.canvas_frame.canvas.create_rectangle(
-                x * settings.CELL_WIDTH,
-                y * settings.CELL_HEIGHT,
-                x * settings.CELL_WIDTH+settings.CELL_WIDTH,
-                y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,
-                tag='show'
-            )
+        self.canvas_frame.canvas.draw_cell_line()
+
+    def show_custom(self):
+        """カスタムハイライト表示で呼ばれる"""
+        CustomHighLight(master=self)
+
+    def delete_mass(self):
+        """マス目を消すで呼ばれる"""
+        self.canvas_frame.canvas.delete('line')
 
     def delete_show_marker(self):
         """強調タイルを削除で呼ばれる"""
-        self.canvas_frame.canvas.delete('show')
+        self.canvas_frame.canvas.delete('redline')
 
 
 def main():

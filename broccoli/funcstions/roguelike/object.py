@@ -2,7 +2,7 @@ from broccoli import register
 from broccoli import const
 
 
-@register.function(name='roguelike.object.action', system='roguelike', attr='action')
+@register.function('roguelike.object.action', system='roguelike', attr='action', material='object')
 def action(self):
     # 4方向に攻撃できそうなのがいれば、攻撃する
     for direction, x, y in self.get_4_positions():
@@ -28,7 +28,7 @@ def action(self):
             self.random_walk()
 
 
-@register.function(name='roguelike.object.random_walk', system='roguelike', attr='random_walk')
+@register.function('roguelike.object.random_walk', system='roguelike', attr='random_walk', material='object')
 def random_walk(self):
     """ランダムに移動する"""
     for direction, x, y in self.get_4_positions():
@@ -40,7 +40,7 @@ def random_walk(self):
             break
 
 
-@register.function(name='roguelike.object.move', system='roguelike', attr='move')
+@register.function('roguelike.object.move', system='roguelike', attr='move', material='object')
 def move(self, tile):
     """移動処理。
 
@@ -83,7 +83,7 @@ def move(self, tile):
     tile.on_self(self)
 
 
-@register.function(name='roguelike.object.is_enemy', system='roguelike', attr='is_enemy')
+@register.function('roguelike.object.is_enemy', system='roguelike', attr='is_enemy', material='object')
 def is_enemy(self, obj):
     """壊れるオブジェクトのデフォルトは、主人公と敵対です。"""
     # 自身がPLAYERなら、ENEMYを敵とみなす
@@ -104,7 +104,7 @@ def is_enemy(self, obj):
     return False
 
 
-@register.function(name='roguelike.object.on_damage', system='roguelike', attr='on_damage')
+@register.function('roguelike.object.on_damage', system='roguelike', attr='on_damage', material='object')
 def on_damage(self, tile, obj):
     """ダメージをうける。"""
     self.canvas.simple_damage_line(self.x, self.y)
@@ -114,7 +114,7 @@ def on_damage(self, tile, obj):
         self.die(tile, obj)
 
 
-@register.function(name='roguelike.object.die', system='roguelike', attr='die')
+@register.function('roguelike.object.die', system='roguelike', attr='die', material='object')
 def die(self, tile, obj):
     """死んだらキャンバス上から消える"""
     self.system.add_message('{}は倒れた!'.format(self.name))
@@ -122,7 +122,7 @@ def die(self, tile, obj):
     self.canvas.object_layer[self.y][self.x] = None
 
 
-@register.function(name='roguelike.object.attack', system='roguelike', attr='attack')
+@register.function('roguelike.object.attack', system='roguelike', attr='attack', material='object')
 def attack(self, tile, obj):
     """攻撃処理。
 
@@ -146,7 +146,7 @@ def attack(self, tile, obj):
     self.canvas.simple_move(self.id, self.x, self.y)
 
 
-@register.function(name='roguelike.object.towards', system='roguelike', attr='towards')
+@register.function('roguelike.object.towards', system='roguelike', attr='towards', material='object')
 def towards(self, material):
     """対象に向かって移動する。"""
     # 相手が右側にいる
@@ -198,7 +198,7 @@ def towards(self, material):
                 return
 
 
-@register.function(name='roguelike.object.get_enemies', system='roguelike', attr='get_enemies')
+@register.function('roguelike.object.get_enemies', system='roguelike', attr='get_enemies', material='object')
 def get_enemies(self, see_x=None, see_y=None):
     """自分の周りの敵を返す。
 

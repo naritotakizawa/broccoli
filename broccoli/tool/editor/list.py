@@ -30,7 +30,7 @@ class BaseList(ttk.Frame):
 
     """
 
-    def __init__(self, master, select_callback=None, **kwargs):
+    def __init__(self, master, select_callback=print, **kwargs):
         super().__init__(master=master, **kwargs)
         self.select_callback = select_callback
         self.items = {}
@@ -82,16 +82,8 @@ class BaseList(ttk.Frame):
         if isinstance(material, (list,)):
             material = material[0]
 
-        self.canvas.delete('select')
-        self.canvas.create_rectangle(
-            material.x * settings.CELL_WIDTH,
-            material.y * settings.CELL_HEIGHT,
-            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
-            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
-            tag='select',
-            outline='red',
-            width=10
-        )
+        self.canvas.delete('redline')
+        self.canvas.create_red_line(material)
         self.select_callback(material)
 
 
@@ -260,7 +252,7 @@ class ItemList(BaseList):
 class UserDataFrame(ttk.Frame):
     """ユーザー定義データのリスト表示・プレビューなどを行うFrame"""
 
-    def __init__(self, tile_callback=None, obj_callback=None, item_callback=None, **kwargs):
+    def __init__(self, tile_callback=print, obj_callback=print, item_callback=print, **kwargs):
         super().__init__(**kwargs)
         self.tile_callback = tile_callback
         self.obj_callback = obj_callback
@@ -283,15 +275,11 @@ class UserDataFrame(ttk.Frame):
         self.note.pack(fill='both')
 
 
-def debug(*args):
-    print(args)
-
-
 def main():
     import importlib
     importlib.import_module('main')
     root = tk.Tk()
-    app = UserDataFrame(master=root, tile_callback=debug, obj_callback=debug, item_callback=debug)
+    app = UserDataFrame(master=root)
     app.pack(fill='both', expand=True)
     root.mainloop()
 
