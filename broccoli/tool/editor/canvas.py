@@ -66,45 +66,58 @@ class MaterialListFrame(tk.Toplevel):
         self.tile = tile
         self.obj = obj
         self.items = items
+        self.row = 0
         self.create_widgets()
 
     def create_widgets(self):
+        self.create_tile_area()
+        self.create_object_area()
+        self.create_item_area()
+
+    def create_tile_area(self):
         tile_frame = ttk.LabelFrame(self, text='タイルの設定')
         # タイルの画像を表示するcanvas
-        self.tile_canvas = tile_canvas = tk.Canvas(tile_frame, width=settings.CELL_WIDTH, height=settings.CELL_HEIGHT)
-        tile_canvas.grid(row=0, column=0, columnspan=2, sticky=STICKY_ALL)
+        tile_canvas = tk.Canvas(tile_frame, width=settings.CELL_WIDTH, height=settings.CELL_HEIGHT)
+        tile_canvas.grid(row=self.row, column=0, columnspan=2, sticky=STICKY_ALL)
+        self.row += 1
         self.tile._id = tile_canvas.create_image(0, 0, image=self.tile.image, anchor='nw')
         self.tile._canvas = tile_canvas
 
-        row = 1
         for attr_name, attr_value in self.tile.get_instance_attrs().items():
-            ttk.Label(tile_frame, text=attr_name).grid(row=row, column=0, sticky=STICKY_ALL)
+            ttk.Label(tile_frame, text=attr_name).grid(row=self.row, column=0, sticky=STICKY_ALL)
             # 属性がメソッドだった場合
             if attr_name in self.tile.func_attrs:
                 label = ttk.Label(tile_frame, text=attr_value.name)
-                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
-                ttk.Button(tile_frame, text='振る舞いの変更', command=method_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(tile_frame, text='振る舞いの変更', command=method_command(self.tile, attr_name, label)).grid(row=self.row, column=2, sticky=STICKY_ALL)
 
             # 属性がリストの場合(未実装)
             elif isinstance(attr_value, list):
                 label = ttk.Label(tile_frame, text=','.join(attr_value))
-                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
 
             # 属性が文字列の場合
             elif isinstance(attr_value, str):
                 label = ttk.Label(tile_frame, text=attr_value)
-                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
-                ttk.Button(tile_frame, text='値の変更', command=str_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(tile_frame, text='値の変更', command=str_command(self.tile, attr_name, label)).grid(row=self.row, column=2, sticky=STICKY_ALL)
 
             # 属性が数値の場合
             elif isinstance(attr_value, int):
                 label = ttk.Label(tile_frame, text=attr_value)
-                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
-                ttk.Button(tile_frame, text='値の変更', command=int_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(tile_frame, text='値の変更', command=int_command(self.tile, attr_name, label)).grid(row=self.row, column=2, sticky=STICKY_ALL)
 
-            row += 1
+            self.row += 1
 
         tile_frame.pack(expand=True, fill='both')
+
+    def create_object_area(self):
+        pass
+
+
+    def create_item_area(self):
+        pass
 
 
 class EditorCanvas(GameCanvas2D):

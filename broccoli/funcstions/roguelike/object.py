@@ -9,7 +9,7 @@ def action(self):
         tile = self.canvas.tile_layer[y][x]
         obj = self.canvas.object_layer[y][x]
         if obj is not None and self.is_enemy(obj):
-            self.direction = direction
+            self.change_direction(direction)
             self.attack(tile, obj)
             break
 
@@ -35,7 +35,7 @@ def random_walk(self):
         tile = self.canvas.tile_layer[y][x]
         obj = self.canvas.object_layer[y][x]
         if tile.is_public(obj=self) and obj is None:
-            self.direction = direction
+            self.change_direction(direction)
             self.move(tile)
             break
 
@@ -73,10 +73,9 @@ def move(self, tile):
         for item in items:
             item.owner = self
             self.items.append(item)
-            self.canvas.delete(item.id)
+            item.layer.delete_material(item)
             messages.append('{}は{}を拾った!'.format(self.name, item.name))
 
-        self.canvas.item_layer[self.y][self.x] = []
         self.system.add_message('\n'.join(messages))
 
     # 必ず最後に
@@ -118,8 +117,7 @@ def on_damage(self, tile, obj):
 def die(self, tile, obj):
     """死んだらキャンバス上から消える"""
     self.system.add_message('{}は倒れた!'.format(self.name))
-    self.canvas.delete(self.id)
-    self.canvas.object_layer[self.y][self.x] = None
+    self.layer.delete_material(self)
 
 
 @register.function('roguelike.object.attack', system='roguelike', attr='attack', material='object')
@@ -157,7 +155,7 @@ def towards(self, material):
             tile = self.canvas.tile_layer[y][x]
             obj = self.canvas.object_layer[y][x]
             if tile.is_public(obj=self) and obj is None:
-                self.direction = const.RIGHT
+                self.change_direction(const.RIGHT)
                 self.move(tile)
                 return
 
@@ -169,7 +167,7 @@ def towards(self, material):
             tile = self.canvas.tile_layer[y][x]
             obj = self.canvas.object_layer[y][x]
             if tile.is_public(obj=self) and obj is None:
-                self.direction = const.LEFT
+                self.change_direction(const.LEFT)
                 self.move(tile)
                 return
 
@@ -181,7 +179,7 @@ def towards(self, material):
             tile = self.canvas.tile_layer[y][x]
             obj = self.canvas.object_layer[y][x]
             if tile.is_public(obj=self) and obj is None:
-                self.direction = const.DOWN
+                self.change_direction(const.DOWN)
                 self.move(tile)
                 return
 
@@ -193,7 +191,7 @@ def towards(self, material):
             tile = self.canvas.tile_layer[y][x]
             obj = self.canvas.object_layer[y][x]
             if tile.is_public(obj=self) and obj is None:
-                self.direction = const.UP
+                self.change_direction(const.UP)
                 self.move(tile)
                 return
 

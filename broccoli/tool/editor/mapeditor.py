@@ -191,8 +191,7 @@ class MapEditor(ttk.Frame):
             )
         elif isinstance(self.select, BaseObject):
             if obj is not None:
-                self.canvas_frame.canvas.delete(obj.id)
-                self.canvas_frame.canvas.object_layer[y][x] = None
+                obj.layer.delete_material(self)
             self.canvas_frame.canvas.object_layer.create_material(
                 material_cls=self.select.copy(), x=x, y=y,
             )

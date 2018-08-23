@@ -127,16 +127,16 @@ class RogueWithPlayer(RogueLikeSystem):
         """主人公の移動処理。"""
         y, x = self.player.y, self.player.x
         if event.char == settings.DOWN_KEY:
-            self.player.direction = const.DOWN
+            self.player.change_direction(const.DOWN)
             y += 1
         elif event.char == settings.LEFT_KEY:
-            self.player.direction = const.LEFT
+            self.player.change_direction(const.LEFT)
             x -= 1
         elif event.char == settings.RIGHT_KEY:
-            self.player.direction = const.RIGHT
+            self.player.change_direction(const.RIGHT)
             x += 1
         elif event.char == settings.UP_KEY:
-            self.player.direction = const.UP
+            self.player.change_direction(const.UP)
             y -= 1
 
         if self.canvas.check_position(x, y):

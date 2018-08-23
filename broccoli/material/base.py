@@ -56,7 +56,7 @@ class BaseMaterial:
             self.name = name
 
         # 向きに関する属性
-        self._direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
+        self.direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
         self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
 
         # マテリアルインスタンスの属性を設定
@@ -83,20 +83,22 @@ class BaseMaterial:
         self.canvas = None
         self.system = None
         self.id = None
+        self.layer = None
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)
 
-    @property
-    def direction(self):
-        return self._direction
+    def change_direction(self, value):
+        """向きを変え、その画像を反映させる。
 
-    @direction.setter
-    def direction(self, value):
+        同じ向きを向いた場合は差分を増やし、そして画像を反映させます。
+        キャラクターを歩行させたい場合に便利です。
+
+        """
         # 前と違う向き
-        if self._direction != value:
+        if self.direction != value:
             self.diff = 0
-            self._direction = value
+            self.direction = value
 
         # 前と同じ向き、差分カウンタを増やす
         else:

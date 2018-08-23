@@ -77,7 +77,7 @@ class MultiDirection(BaseLoader):
             self.load()
 
         # directionが-1なら、ランダムに設定
-        direction = instance._direction
+        direction = instance.direction
         if direction == -1:
             direction = random.randrange(len(self.path))
         return self.images[direction]
@@ -116,7 +116,7 @@ class MultiDirectionWithDiff(MultiDirection):
             self.load()
 
         # directionが-1なら、ランダムに設定
-        direction = instance._direction
+        direction = instance.direction
         if direction == -1:
             direction = random.randrange(len(self.path))
 
@@ -174,7 +174,7 @@ class NormalSplite(MultiDirection):
             self.load()
 
         # directionが-1なら、ランダムに設定
-        direction = instance._direction
+        direction = instance.direction
         if direction == -1:
             direction = random.randrange(len(self.images))
 

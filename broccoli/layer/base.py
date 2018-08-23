@@ -20,6 +20,7 @@ class BaseLayer:
         self[y][x] = material
         material.x = x
         material.y = y
+        material.layer = self
 
     def all(self, include_none=True):
         """レイヤ内のものを全て返す。
@@ -47,6 +48,10 @@ class BaseLayer:
         # キャンバスへの描画
         self.canvas.create_material(material)
         return material
+
+    def delete_material(self, material):
+        """マテリアルを削除する"""
+        raise NotImplementedError
 
     def get_empty_space(self, material=None):
         """空いているスペースを全てyieldで返す。
@@ -170,13 +175,17 @@ class BaseObjectLayer(BaseLayer):
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
         for x, y, obj in self.all(include_none=False):
-            self[y][x] = None
-            self.canvas.delete(obj.id)
+            self.delete_material(obj)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
         material = super().create_material(material_cls, x=x, y=y, **kwargs)
         self.canvas.lift(material.id)  # オブジェクトは一番上に配置する
         return material
+
+    def delete_material(self, material):
+        """マテリアルを削除する"""
+        self[material.y][material.x] = None
+        self.canvas.delete(material.id)
 
 
 class BaseItemLayer(BaseLayer):
@@ -190,6 +199,7 @@ class BaseItemLayer(BaseLayer):
         self[y][x].append(material)
         material.x = x
         material.y = y
+        material.layer = self
 
     def create(self):
         """レイヤーの作成、描画を行う"""
@@ -227,11 +237,15 @@ class BaseItemLayer(BaseLayer):
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
         for x, y, items in self.all(include_none=False):
-            self[y][x] = []
             for item in items:
-                self.canvas.delete(item.id)
+                self.delete_material(item)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
         material = super().create_material(material_cls, x=x, y=y, **kwargs)
         self.canvas.lift(material.id, self.tile_layer.first_tile_id)  # 一番上にある背景の上
         return material
+
+    def delete_material(self, material):
+        """マテリアルを削除する"""
+        self[material.y][material.x].remove(material)
+        self.canvas.delete(material.id)
