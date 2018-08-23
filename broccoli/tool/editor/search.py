@@ -67,6 +67,9 @@ class SearchFrame(ttk.Frame):
             self.select_callback(func)
 
 
+
+
+
 if __name__ == '__main__':
     root = tk.Tk()
     app = SearchFrame(master=root)

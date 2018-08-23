@@ -149,9 +149,9 @@ class BaseMaterial:
 
     def to_dict(self):
         result = {
+            'name': self.name,
             'direction': self.direction,
             'diff': self.diff,
-            'name': self.name,
         }
         for attr_name in self.attrs:
             value = getattr(self, attr_name)
@@ -172,9 +172,9 @@ class BaseMaterial:
 
     def get_instance_attrs(self):
         result = {
+            'name': self.name,
             'direction': self.direction,
             'diff': self.diff,
-            'name': self.name,
         }
         for attr_name in self.attrs:
             value = getattr(self, attr_name)
