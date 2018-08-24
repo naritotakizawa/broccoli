@@ -5,7 +5,7 @@ from object import Dog
 
 class MyGame(SimpleGameManager):
     canvas_list = [dungeon1, dungeon2, dungeon3]
-    player_cls = Dog
+    player = Dog
 
 
 if __name__ == '__main__':

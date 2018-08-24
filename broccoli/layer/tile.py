@@ -96,14 +96,11 @@ class JsonTileLayer(BaseTileLayer):
                 class_name = col['class_name']
                 kwargs = col['kwargs']
                 cls = register.tiles[class_name]
-
-                public = kwargs['public']
-                if public is not True and public is not False:
-                    kwargs['public'] = register.public_funcs[public]
-
-                on = kwargs['on']
-                if on is not None:
-                    kwargs['on'] = register.on_funcs[on]
+                for func_attr in cls.func_attrs:
+                    if func_attr in kwargs:
+                        func_name = kwargs[func_attr]
+                        func = register.functions[func_name]
+                        kwargs[func_attr] = func
                 self.create_material(material_cls=cls, x=x, y=y, **kwargs)
 
 

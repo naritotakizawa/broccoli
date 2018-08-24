@@ -1,11 +1,12 @@
 from broccoli import register
-from broccoli.material import HealingItem
+from broccoli.funcstions.roguelike import healing_use
+from broccoli.material import RogueLikeItem
 from broccoli.img.loader import NoDirection
 
 
 @register.item
-class HealingHerb(HealingItem):
+class HealingHerb(RogueLikeItem):
     name = '薬草'
-    description = '薬草です。'
-    default_power = 10
+    power = 10
     image = NoDirection('img/item/herb1.png')
+    use = healing_use

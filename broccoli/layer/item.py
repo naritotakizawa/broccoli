@@ -80,4 +80,9 @@ class JsonItemLayer(BaseItemLayer):
                         class_name = item['class_name']
                         kwargs = item['kwargs']
                         cls = register.items[class_name]
+                        for func_attr in cls.func_attrs:
+                            if func_attr in kwargs:
+                                func_name = kwargs[func_attr]
+                                func = register.functions[func_name]
+                                kwargs[func_attr] = func
                         self.create_material(material_cls=cls, x=x, y=y, **kwargs)

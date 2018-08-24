@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import filedialog
 from broccoli.conf import settings
 from broccoli.layer import EmptyObjectLayer, EmptyItemLayer
+from broccoli.system import BaseSystem
 
 
 class GameCanvas2D(tk.Canvas):
@@ -27,25 +28,33 @@ class GameCanvas2D(tk.Canvas):
 
     """
 
-    def __init__(self, manager, name, tile_layer, system, object_layer=None, item_layer=None):
+    def __init__(self, tile_layer, master=None, name='名前のないマップ', manager=None, system=None, object_layer=None, item_layer=None):
         self.manager = manager
         self.name = name
 
         # 背景層
         self.tile_layer = tile_layer
+        self.tile_layer.canvas = self
 
         # 物体層。object_layerがNoneなら、object_layerが何もない(layer内が全てNone)なEmptyObjectLayerを利用する。
         if object_layer is None:
             object_layer = EmptyObjectLayer()
         self.object_layer = object_layer
+        self.object_layer.canvas = self
+        self.object_layer.tile_layer = self.tile_layer
 
         # アイテム層。item_layerがNoneなら、item_layerが何もない(layer内が全てNone)ならEmptyItemLayerを利用する
         if item_layer is None:
             item_layer = EmptyItemLayer()
         self.item_layer = item_layer
+        self.item_layer.canvas = self
+        self.item_layer.tile_layer = self.tile_layer
 
         # ゲームシステムを保持する。
+        if system is None:
+            system = BaseSystem()
         self.system = system
+        self.system.canvas = self
 
         # マップ全体の高さと幅
         max_height = self.tile_layer.y_length * settings.CELL_HEIGHT
@@ -53,13 +62,13 @@ class GameCanvas2D(tk.Canvas):
 
         # Canvas内をスクロール可能にし、スクロールの最大値を設定
         scroll_region = (0, 0, max_width, max_height)
-        super().__init__(master=manager.root, scrollregion=scroll_region, width=settings.GAME_WIDTH, height=settings.GAME_HEIGHT)
+        super().__init__(master=master, scrollregion=scroll_region, width=settings.GAME_WIDTH, height=settings.GAME_HEIGHT)
 
         # マップとシステムの初期設定
-        self.tile_layer.create(self)
-        self.object_layer.create(self, self.tile_layer)
-        self.item_layer.create(self, tile_layer)
-        self.system.setup(self)
+        self.tile_layer.create()
+        self.object_layer.create()
+        self.item_layer.create()
+        self.system.setup()
 
     def start(self):
         """このマップを楽しく遊ぶことができます。"""
@@ -115,22 +124,13 @@ class GameCanvas2D(tk.Canvas):
 
         ・x, yがマイナスの値の場合
         ・マップの範囲外の場合
-        には、(None, None)を返します。
-
-        そうでなければ、その座標にある背景とオブジェクトを返します。
-        マップの範囲外や不正なインデックスは、tileがNoneかどうかだけで判断できます。
+        にはFalseを返します。
 
         """
-        if x < 0 or y < 0:
-            return None, None
+        if x < 0 or y < 0 or x >= self.tile_layer.x_length or y >= self.tile_layer.y_length:
+            return False
 
-        try:
-            obj = self.object_layer[y][x]
-            tile = self.tile_layer[y][x]
-        except IndexError:
-            return None, None
-        else:
-            return obj, tile
+        return True
 
     def to_json(self, event=None):
         """現在のマップデータを、jsonで出力する。"""
@@ -212,3 +212,12 @@ class GameCanvas2D(tk.Canvas):
         # デフォルトでは、0.1秒後にダメージ線を消す
         self.after(int(times*1000))
         self.delete(damage_line)
+
+    def create_material(self, material):
+        """マテリアルの描画を行う"""
+        material_id = self.create_image(
+            material.x*settings.CELL_WIDTH,
+            material.y*settings.CELL_HEIGHT,
+            image=material.image, anchor='nw'
+        )
+        material.id = material_id

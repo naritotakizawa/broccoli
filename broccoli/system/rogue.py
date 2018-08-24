@@ -6,12 +6,13 @@
 """
 import tkinter as tk
 import tkinter.ttk as ttk
-from broccoli import const
-from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
 from broccoli.conf import settings
+from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
+from broccoli.material.object import *
+from .base import BaseSystem
 
 
-class RogueLikeSystem:
+class RogueLikeSystem(BaseSystem):
     """ローグライクに使えそうなシステムクラスの基底。"""
     # HPやターン数の表示に関する設定
     text_size = 18
@@ -20,20 +21,16 @@ class RogueLikeSystem:
     color = settings.DEFAULT_TEXT_COLOR
 
     def __init__(self, message_class=LogAndActiveMessageDialog, show_item_dialog_class=ListDialog):
-        # Trueのときは、次のキャラクターは行動を待つ、などに使うフラグです。
-        self.is_block = False
-
+        super().__init__()
         # 現在ターンを表す変数
         self.turn = 0
 
         self.message_class = message_class
         self.show_item_dialog_class = show_item_dialog_class
 
-    def setup(self, canvas):
-        self.canvas = canvas
-
+    def setup(self):
         # メッセージクラスのインスタンス化
-        self.message = self.message_class(parent=self, canvas=canvas)
+        self.message = self.message_class(parent=self, canvas=self.canvas)
 
     def start(self):
         # 0.1 秒ぐらいごとに、ゲームの状態を監視する
@@ -51,18 +48,6 @@ class RogueLikeSystem:
             ('<{}>'.format (settings.SHOW_ITEM_KEY), self.show_item_dialog),
             ('<{}>'.format (settings.SHOW_MESSAGE_KEY), self.message.show),
         ]
-
-    def create_key_event(self):
-        """キーイベントの設定。"""
-        root = self.canvas.winfo_toplevel()
-        for key, func in self.get_key_events():
-            root.bind(key, func)
-
-    def clear_key_event(self):
-        """キーイベントを一時解除する。"""
-        root = self.canvas.winfo_toplevel()
-        for key, func in self.get_key_events():
-            root.unbind(key)
 
     def move(self, event):
         """移動キーを押した際のメソッド。"""
@@ -129,50 +114,46 @@ class RogueLikeSystem:
 class RogueWithPlayer(RogueLikeSystem):
     """プレイヤーがいるローグライクシステム。"""
 
-    def setup(self, canvas):
-        super().setup(canvas)
-
+    def setup(self,):
+        super().setup()
         # プレイヤーがいないとダメ
-        player = canvas.manager.player
-        if player is None:
-            # ここは専用の例外を作る
-            raise Exception('プレイヤーを指定してください。')
-        player.canvas = canvas
-
-        self.player = player
-        canvas.object_layer.create_material(material_cls=player)
-        self.canvas.move_camera(player)  # 主人公位置に合わせて表示部分を動かす
+        self.player = self.canvas.object_layer.create_material(
+            material_cls=self.canvas.manager.player,
+            name='あなた', kind=const.PLAYER
+        )
+        self.canvas.move_camera(self.player)  # 主人公位置に合わせて表示部分を動かす
 
     def move(self, event):
         """主人公の移動処理。"""
         y, x = self.player.y, self.player.x
         if event.char == settings.DOWN_KEY:
-            self.player.direction = const.DOWN
+            self.player.change_direction(const.DOWN)
             y += 1
         elif event.char == settings.LEFT_KEY:
-            self.player.direction = const.LEFT
+            self.player.change_direction(const.LEFT)
             x -= 1
         elif event.char == settings.RIGHT_KEY:
-            self.player.direction = const.RIGHT
+            self.player.change_direction(const.RIGHT)
             x += 1
         elif event.char == settings.UP_KEY:
-            self.player.direction = const.UP
+            self.player.change_direction(const.UP)
             y -= 1
 
-        # 移動可能な座標なら移動し、ターンを進める。移動不可能ならターン経過はなし
-        ok, obj, tile = self.player.can_move(x, y)
-        if ok:
-            self.player.move(tile)
-            try:
-                self.canvas.move_camera(self.player)
-            except Exception:
-                # moveは背景のon_selfを呼び出しますが、その際次マップへ移動している可能性があります。
-                # 次マップへ移動している場合、canvas.move_cameraが参照しているcanvasオブジェクトは
-                # destroy済みで例外が送出され、ここにきます。act_objectsなどの他の処理をする必要はないため、pass
-                pass
-            else:
-                self.act_objects(exclude=[self.player])
-                self.turn += 1
+        if self.canvas.check_position(x, y):
+            tile = self.canvas.tile_layer[y][x]
+            obj = self.canvas.object_layer[y][x]
+            if obj is None and tile.is_public(obj=self.player):
+                self.player.move(tile)
+                try:
+                    self.canvas.move_camera(self.player)
+                except Exception:
+                    # moveは背景のon_selfを呼び出しますが、その際次マップへ移動している可能性があります。
+                    # 次マップへ移動している場合、canvas.move_cameraが参照しているcanvasオブジェクトは
+                    # destroy済みで例外が送出され、ここにきます。act_objectsなどの他の処理をする必要はないため、pass
+                    pass
+                else:
+                    self.act_objects(exclude=[self.player])
+                    self.turn += 1
 
     def attack(self, event):
         """主人公の攻撃処理。"""
@@ -187,10 +168,11 @@ class RogueWithPlayer(RogueLikeSystem):
             y -= 1
 
         # マップの範囲外ならやめる。範囲内なら、とりあえず攻撃させる。素振りなどもしたいかも
-        obj, tile = self.canvas.check_position(x, y)
-        if tile is None:
+        if not self.canvas.check_position(x, y):
             return
 
+        tile = self.canvas.tile_layer[y][x]
+        obj = self.canvas.object_layer[y][x]
         self.player.attack(tile, obj)
         self.canvas.move_camera(self.player)
         self.act_objects(exclude=[self.player])
@@ -252,13 +234,13 @@ class RogueWithPlayer(RogueLikeSystem):
 class RogueNoPlayer(RogueLikeSystem):
     """プレイヤーのいない、観戦用モード。"""
 
-    def setup(self, canvas):
-        super().setup(canvas)
+    def setup(self):
+        super().setup()
 
         # 中央にカメラ移動
-        self.x = canvas.tile_layer.x_length // 2
-        self.y = canvas.tile_layer.y_length // 2
-        self.canvas.move_camera(canvas.tile_layer[self.y][self.x])
+        self.x = self.canvas.tile_layer.x_length // 2
+        self.y = self.canvas.tile_layer.y_length // 2
+        self.canvas.move_camera(self.canvas.tile_layer[self.y][self.x])
 
     def move(self, event):
         """カメラ移動処理。"""
@@ -272,8 +254,7 @@ class RogueNoPlayer(RogueLikeSystem):
         elif event.char == settings.UP_KEY:
             y -= 1
 
-        obj, tile = self.canvas.check_position(x, y)
-        if tile is None:
+        if not self.canvas.check_position(x, y):
             return
 
         self.x = x

@@ -14,14 +14,18 @@ tileとobjectの中にはどちらにも属せそうなものがありますが�
 使いたい画像の透過具合(tileの画像内に透過部分があると、表示が上手くされません)などを見ながら使うと良いでしょう。
 
 """
+import inspect
+import random
+import types
+from broccoli import const
 
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
-    name = 'ベースマテリアル'
-    description = '全てのベース。この説明が見えていると、何かおかしいぞ!'
+    attrs = []
+    func_attrs = []
 
-    def __init__(self, direction=0, diff=0, name=None):
+    def __init__(self, direction=0, diff=0, name=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
@@ -44,34 +48,57 @@ class BaseMaterial:
         マテリアルを表す名前(name)、今の向き(direction)、向きの差分カウント(diff)などの属性もあります。
 
         """
+        cls = type(self)
+
         if name is None:
-            self.name = type(self).name
+            self.name = cls.name
         else:
             self.name = name
+
+        # 向きに関する属性
+        self.direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
+        self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
+
+        # マテリアルインスタンスの属性を設定
+        # kwargsにあればそれを、そうでなければクラス属性を設定
+        # 更に関数ならば、メソッドとして灯籠
+        for attr_name in cls.attrs:
+            if attr_name in kwargs:
+                value = kwargs[attr_name]
+            else:
+                value = getattr(cls, attr_name)
+
+            if attr_name in self.func_attrs:
+                value = self.create_method(value)
+
+            # クラス属性の空リストや辞書等を使った場合は、他と共有されるのでcopy
+            # ミュータブルなオブジェクト全てに言えるので、いずれ汎用的に。
+            if isinstance(value, (list, dict)):
+                value = value.copy()
+
+            setattr(self, attr_name, value)
 
         self.y = None
         self.x = None
         self.canvas = None
         self.system = None
         self.id = None
-
-        # 向きに関する属性
-        self._direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
-        self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
+        self.layer = None
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)
 
-    @property
-    def direction(self):
-        return self._direction
+    def change_direction(self, value):
+        """向きを変え、その画像を反映させる。
 
-    @direction.setter
-    def direction(self, value):
+        同じ向きを向いた場合は差分を増やし、そして画像を反映させます。
+        キャラクターを歩行させたい場合に便利です。
+
+        """
         # 前と違う向き
-        if self._direction != value:
+        if self.direction != value:
             self.diff = 0
-            self._direction = value
+            self.direction = value
 
         # 前と同じ向き、差分カウンタを増やす
         else:
@@ -79,6 +106,39 @@ class BaseMaterial:
 
         # 向きを変えたら、画像もすぐに反映させる。imageはディスクリプタです。
         self.canvas.itemconfig(self.id, image=self.image)
+
+    def get_4_positions(self):
+        """4方向の座標を取得するショートカットメソッドです。
+
+        [
+            (DOWN, self.x, self.y+1),
+            (LEFT, self.x-1, self.y),
+            (RIGHT, self.x+1, self.y),
+            (UP, self.x, self.y - 1),
+        ]
+        といったリストを返します。
+        DOWNなどは向きに直接代入できる定数です。
+        また、その方向がマップの範囲外になる場合は無視されます。
+        空のリストが返ったら、4方向が全てマップの範囲外ということです。
+
+        デフォルトではシャッフルして返しますので、必ずしも下座標から取得できる訳ではありません。
+
+        """
+        positions = [
+            (const.DOWN, self.x, self.y + 1),
+            (const.LEFT, self.x - 1, self.y),
+            (const.RIGHT, self.x + 1, self.y),
+            (const.UP, self.x, self.y - 1),
+        ]
+        result_positions =[]
+        for direction, x, y in positions:
+            # マップの範囲外は無視する
+            if self.canvas.check_position(x, y):
+                result_positions.append(
+                    (direction, x, y)
+                )
+        random.shuffle(result_positions)
+        return result_positions
 
     def get_nearest(self, materials):
         """materialsの中から、自分に最も近いものを返す。"""
@@ -90,7 +150,47 @@ class BaseMaterial:
         return sorted_materials[0]
 
     def to_dict(self):
-        return {
+        result = {
+            'name': self.name,
             'direction': self.direction,
             'diff': self.diff,
         }
+        for attr_name in self.attrs:
+            value = getattr(self, attr_name)
+            if attr_name in self.func_attrs:
+                value = value.name  # 関数のname属性に、registerに登録する名前が入っている
+            result[attr_name] = value
+        return result
+
+    @classmethod
+    def get_class_attrs(cls):
+        result = {
+            'name': cls.name,
+        }
+        for attr_name in cls.attrs:
+            value = getattr(cls, attr_name)
+            result[attr_name] = value
+        return result
+
+    def get_instance_attrs(self):
+        result = {
+            'name': self.name,
+            'direction': self.direction,
+            'diff': self.diff,
+        }
+        for attr_name in self.attrs:
+            value = getattr(self, attr_name)
+            result[attr_name] = value
+        return result
+
+    def copy(self):
+        cls = type(self)
+        kwargs = self.get_instance_attrs()
+        return cls(**kwargs)
+
+    def create_method(self, func):
+        # 既にメソッドだった場合はそのままにする
+        # 既にメソッドになっているケースとしては、copyでの複製インスタンス化時
+        if not inspect.ismethod(func):
+            func = types.MethodType(func, self)
+        return func

@@ -7,7 +7,6 @@
 """
 import json
 import random
-from broccoli.conf import settings
 
 
 class BaseLayer:
@@ -16,6 +15,12 @@ class BaseLayer:
     def __init__(self):
         self.layer = None
         self.canvas = None
+
+    def put_material(self, material, x, y):
+        self[y][x] = material
+        material.x = x
+        material.y = y
+        material.layer = self
 
     def all(self, include_none=True):
         """レイヤ内のものを全て返す。
@@ -30,28 +35,23 @@ class BaseLayer:
                     yield x, y, col
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            # マテリアルが既にインスタンス化済みの場合にここ
-            material = material_cls
-        material.canvas = self.canvas
+        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う"""
+        # マテリアルの生成と初期設定
+        material = self.canvas.system.create_material(material_cls, **kwargs)
 
+        # レイヤへの配置
         # x,y座標の指定がなければ座標を探す
         if x is None or y is None:
             x, y = self.get_random_empty_space(material)
+        self.put_material(material, x, y)
 
-        self[y][x] = material
-        material_id = self.canvas.create_image(
-            x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT,
-            image=material.image, anchor='nw'
-        )
-        material.x = x
-        material.y = y
-        material.system = self.canvas.system
-        material.id = material_id
-        return material_id
+        # キャンバスへの描画
+        self.canvas.create_material(material)
+        return material
+
+    def delete_material(self, material):
+        """マテリアルを削除する"""
+        raise NotImplementedError
 
     def get_empty_space(self, material=None):
         """空いているスペースを全てyieldで返す。
@@ -85,9 +85,8 @@ class BaseTileLayer(BaseLayer):
         self.y_length = y_length
         self.first_tile_id = None
 
-    def create(self, canvas):
+    def create(self):
         """レイヤーの作成、描画を行う。"""
-        self.canvas = canvas
         self.layer = [[None for _ in range(self.x_length)] for _ in range(self.y_length)]
         self.create_layer()
 
@@ -123,16 +122,27 @@ class BaseTileLayer(BaseLayer):
             json.dump(data, file)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
-        material_id = super().create_material(material_cls, x=x, y=y, **kwargs)
-        self.canvas.lower(material_id)  # 背景は一番下に配置する
+        material = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lower(material.id)  # 背景は一番下に配置する
 
         # 一番はじめのタイルはIDを保存しておきます。
         # オブジェクトはどんどん上に描画され、タイルはどんどん下に描画され、アイテムは最初のタイルの上に描画されます。
         # 結果として、オブジェクト アイテム タイル という順番での重なりで描画されます。
         if self.first_tile_id is None:
-            self.first_tile_id = material_id
-        return material_id
+            self.first_tile_id = material.id
+        return material
+
+    def delete_material(self, material):
+        """タイルを削除する。
+
+        タイルは存在しているのが当然なため、レイヤ内にNoneを入れる等はできません。
+
+        このメソッドは、新しいタイルを設定する際に古いタイルを消したい、というケースに使ってください。
+        このメソッドはキャンバス上から消す(表示だけ消す)ことしか行いません。
+        その後にcreate_materialで、新しいタイルを設定してください。
+
+        """
+        self.canvas.delete(material.id)
 
 
 class BaseObjectLayer(BaseLayer):
@@ -142,11 +152,9 @@ class BaseObjectLayer(BaseLayer):
         super().__init__()
         self.tile_layer = None
 
-    def create(self, canvas, tile_layer):
+    def create(self):
         """レイヤーの作成、描画を行う。"""
-        self.canvas = canvas
-        self.tile_layer = tile_layer
-        self.layer = [[None for _ in range(tile_layer.x_length)] for _ in range(tile_layer.y_length)]
+        self.layer = [[None for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)]
         self.create_layer()
 
     def get_empty_space(self, material=None):
@@ -156,8 +164,7 @@ class BaseObjectLayer(BaseLayer):
 
         """
         for x, y, tile in self.tile_layer.all():
-            ok, _, _ = material.can_move(x, y)
-            if ok:
+            if tile.is_public(obj=material) and self[y][x] is None:
                 yield x, y
 
     def to_json(self, path):
@@ -180,14 +187,17 @@ class BaseObjectLayer(BaseLayer):
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
         for x, y, obj in self.all(include_none=False):
-            self[y][x] = None
-            self.canvas.delete(obj.id)
+            self.delete_material(obj)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す"""
-        material_id = super().create_material(material_cls, x=x, y=y, **kwargs)
-        self.canvas.lift(material_id)  # オブジェクトは一番上に配置する
-        return material_id
+        material = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lift(material.id)  # オブジェクトは一番上に配置する
+        return material
+
+    def delete_material(self, material):
+        """マテリアルを削除する"""
+        self[material.y][material.x] = None
+        self.canvas.delete(material.id)
 
 
 class BaseItemLayer(BaseLayer):
@@ -197,11 +207,15 @@ class BaseItemLayer(BaseLayer):
         super().__init__()
         self.tile_layer = None
 
-    def create(self, canvas, tile_layer):
+    def put_material(self, material, x, y):
+        self[y][x].append(material)
+        material.x = x
+        material.y = y
+        material.layer = self
+
+    def create(self):
         """レイヤーの作成、描画を行う"""
-        self.canvas = canvas
-        self.tile_layer = tile_layer
-        self.layer = [[[] for _ in range(tile_layer.x_length)] for _ in range(tile_layer.y_length)]
+        self.layer = [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)]
         self.create_layer()
 
     def get_empty_space(self, material=None):
@@ -216,7 +230,7 @@ class BaseItemLayer(BaseLayer):
                 yield x, y
 
     def to_json(self, path):
-        """オブジェクトレイヤーをJSON出力する。"""
+        """アイテムレイヤーをJSON出力する。"""
         data = {
             'layer': [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
         }
@@ -235,31 +249,15 @@ class BaseItemLayer(BaseLayer):
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
         for x, y, items in self.all(include_none=False):
-            self[y][x] = []
             for item in items:
-                self.canvas.delete(item.id)
+                self.delete_material(item)
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """キャンバスへの描画、レイヤへの配置、マテリアルの生成と初期設定を行い、マテリアルのIDを返す。"""
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            # マテリアルが既にインスタンス化済みの場合にここ
-            material = material_cls
-        material.canvas = self.canvas
+        material = super().create_material(material_cls, x=x, y=y, **kwargs)
+        self.canvas.lift(material.id, self.tile_layer.first_tile_id)  # 一番上にある背景の上
+        return material
 
-        # x,y座標の指定がなければ座標を探す
-        if x is None or y is None:
-            x, y = self.get_random_empty_space(material)
-
-        self[y][x].append(material)  # アイテムは複数格納できるので、各セルはリストになっている
-        material_id = self.canvas.create_image(
-            x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT,
-            image=material.image, anchor='nw'
-        )
-        material.x = x
-        material.y = y
-        material.system = self.canvas.system
-        material.id = material_id
-        self.canvas.lift(material_id, self.tile_layer.first_tile_id)  # 一番上にある背景の上
-        return material_id
+    def delete_material(self, material):
+        """マテリアルを削除する"""
+        self[material.y][material.x].remove(material)
+        self.canvas.delete(material.id)

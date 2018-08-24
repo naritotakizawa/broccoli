@@ -1,5 +1,5 @@
 from broccoli.canvas import GameCanvas2D
-from broccoli.layer import RandomTileLayer, RandomObjectLayer, RandomItemLayer
+from broccoli.layer import RandomTileLayer, RandomObjectLayer, RandomItemLayer, JsonItemLayer, JsonObjectLayer, JsonTileLayer
 from broccoli.system import RogueWithPlayer, RogueNoPlayer
 from broccoli.dialog import LogAndActiveMessageDialog, ActiveMessageDialog, LogMessageDialog, ListDialog
 # from broccoli.dialog.img import LogAndActiveMessageDialog, ActiveMessageDialog, LogMessageDialog, ListDialog
