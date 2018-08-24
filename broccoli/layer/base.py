@@ -132,6 +132,18 @@ class BaseTileLayer(BaseLayer):
             self.first_tile_id = material.id
         return material
 
+    def delete_material(self, material):
+        """タイルを削除する。
+
+        タイルは存在しているのが当然なため、レイヤ内にNoneを入れる等はできません。
+
+        このメソッドは、新しいタイルを設定する際に古いタイルを消したい、というケースに使ってください。
+        このメソッドはキャンバス上から消す(表示だけ消す)ことしか行いません。
+        その後にcreate_materialで、新しいタイルを設定してください。
+
+        """
+        self.canvas.delete(material.id)
+
 
 class BaseObjectLayer(BaseLayer):
     """オブジェクトレイヤの基底クラス。"""

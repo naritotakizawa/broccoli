@@ -59,6 +59,13 @@ def int_command(material, attr_name, label):
     return _int_command
 
 
+def delete_command(material, frame):
+    def _delete_command():
+        material.layer.delete_material(material)
+        frame.destroy()
+    return _delete_command
+
+
 class MaterialListFrame(tk.Toplevel):
 
     def __init__(self, tile, obj, items, **kwargs):
@@ -66,58 +73,136 @@ class MaterialListFrame(tk.Toplevel):
         self.tile = tile
         self.obj = obj
         self.items = items
-        self.row = 0
         self.create_widgets()
 
     def create_widgets(self):
+        self.note = ttk.Notebook(master=self)
+        self.note.pack(expand=True, fill='both')
         self.create_tile_area()
-        self.create_object_area()
-        self.create_item_area()
+        if self.obj is not None:
+            self.create_object_area()
+        if self.items:
+            self.create_item_area()
 
     def create_tile_area(self):
-        tile_frame = ttk.LabelFrame(self, text='タイルの設定')
+        row = 0
+        tile_frame = ttk.Frame(self)
         # タイルの画像を表示するcanvas
         tile_canvas = tk.Canvas(tile_frame, width=settings.CELL_WIDTH, height=settings.CELL_HEIGHT)
-        tile_canvas.grid(row=self.row, column=0, columnspan=2, sticky=STICKY_ALL)
-        self.row += 1
+        tile_canvas.grid(row=row, column=0, columnspan=2, sticky=STICKY_ALL)
+        row += 1
         self.tile._id = tile_canvas.create_image(0, 0, image=self.tile.image, anchor='nw')
         self.tile._canvas = tile_canvas
 
         for attr_name, attr_value in self.tile.get_instance_attrs().items():
-            ttk.Label(tile_frame, text=attr_name).grid(row=self.row, column=0, sticky=STICKY_ALL)
+            ttk.Label(tile_frame, text=attr_name).grid(row=row, column=0, sticky=STICKY_ALL)
             # 属性がメソッドだった場合
             if attr_name in self.tile.func_attrs:
                 label = ttk.Label(tile_frame, text=attr_value.name)
-                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
-                ttk.Button(tile_frame, text='振る舞いの変更', command=method_command(self.tile, attr_name, label)).grid(row=self.row, column=2, sticky=STICKY_ALL)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(tile_frame, text='振る舞いの変更', command=method_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
             # 属性がリストの場合(未実装)
             elif isinstance(attr_value, list):
                 label = ttk.Label(tile_frame, text=','.join(attr_value))
-                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
             # 属性が文字列の場合
             elif isinstance(attr_value, str):
                 label = ttk.Label(tile_frame, text=attr_value)
-                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
-                ttk.Button(tile_frame, text='値の変更', command=str_command(self.tile, attr_name, label)).grid(row=self.row, column=2, sticky=STICKY_ALL)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(tile_frame, text='値の変更', command=str_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
             # 属性が数値の場合
             elif isinstance(attr_value, int):
                 label = ttk.Label(tile_frame, text=attr_value)
-                label.grid(row=self.row, column=1, sticky=STICKY_ALL, padx=50)
-                ttk.Button(tile_frame, text='値の変更', command=int_command(self.tile, attr_name, label)).grid(row=self.row, column=2, sticky=STICKY_ALL)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(tile_frame, text='値の変更', command=int_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
-            self.row += 1
+            row += 1
 
-        tile_frame.pack(expand=True, fill='both')
+        self.note.add(tile_frame, text='タイル')
 
     def create_object_area(self):
-        pass
+        row = 0
+        obj_frame = ttk.Frame(self)
+        # オブジェクトの画像を表示するcanvas
+        obj_canvas = tk.Canvas(obj_frame, width=settings.CELL_WIDTH, height=settings.CELL_HEIGHT)
+        obj_canvas.grid(row=row, column=0, sticky=STICKY_ALL)
+        ttk.Button(obj_frame, text='削除', command=delete_command(self.obj, obj_frame)).grid(row=row, column=1, sticky=STICKY_ALL)
+        row += 1
+        self.obj._id = obj_canvas.create_image(0, 0, image=self.obj.image, anchor='nw')
+        self.obj._canvas = obj_canvas
 
+        for attr_name, attr_value in self.obj.get_instance_attrs().items():
+            ttk.Label(obj_frame, text=attr_name).grid(row=row, column=0, sticky=STICKY_ALL)
+            # 属性がメソッドだった場合
+            if attr_name in self.obj.func_attrs:
+                label = ttk.Label(obj_frame, text=attr_value.name)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(obj_frame, text='振る舞いの変更', command=method_command(self.obj, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+
+            # 属性がリストの場合(未実装)
+            elif isinstance(attr_value, list):
+                label = ttk.Label(obj_frame, text=','.join(attr_value))
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+
+            # 属性が文字列の場合
+            elif isinstance(attr_value, str):
+                label = ttk.Label(obj_frame, text=attr_value)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(obj_frame, text='値の変更', command=str_command(self.obj, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+
+            # 属性が数値の場合
+            elif isinstance(attr_value, int):
+                label = ttk.Label(obj_frame, text=attr_value)
+                label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                ttk.Button(obj_frame, text='値の変更', command=int_command(self.obj, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+
+            row += 1
+
+        self.note.add(obj_frame, text='オブジェクト')
 
     def create_item_area(self):
-        pass
+        row = 0
+        for i, item in enumerate(self.items, 1):
+            item_frame = ttk.Frame(self)
+            # アイテムの画像を表示するcanvas
+            item_canvas = tk.Canvas(item_frame, width=settings.CELL_WIDTH, height=settings.CELL_HEIGHT)
+            item_canvas.grid(row=row, column=0, sticky=STICKY_ALL)
+            ttk.Button(item_frame, text='削除', command=delete_command(item, item_frame)).grid(row=row, column=1, sticky=STICKY_ALL)
+            row += 1
+            item._id = item_canvas.create_image(0, 0, image=item.image, anchor='nw')
+            item._canvas = item_canvas
+
+            for attr_name, attr_value in item.get_instance_attrs().items():
+                ttk.Label(item_frame, text=attr_name).grid(row=row, column=0, sticky=STICKY_ALL)
+                # 属性がメソッドだった場合
+                if attr_name in item.func_attrs:
+                    label = ttk.Label(item_frame, text=attr_value.name)
+                    label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                    ttk.Button(item_frame, text='振る舞いの変更', command=method_command(item, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+
+                # 属性がリストの場合(未実装)
+                elif isinstance(attr_value, list):
+                    label = ttk.Label(item_frame, text=','.join(attr_value))
+                    label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+
+                # 属性が文字列の場合
+                elif isinstance(attr_value, str):
+                    label = ttk.Label(item_frame, text=attr_value)
+                    label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                    ttk.Button(item_frame, text='値の変更', command=str_command(item, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+
+                # 属性が数値の場合
+                elif isinstance(attr_value, int):
+                    label = ttk.Label(item_frame, text=attr_value)
+                    label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
+                    ttk.Button(item_frame, text='値の変更', command=int_command(item, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
+
+                row += 1
+
+            self.note.add(item_frame, text='{}番目のアイテム'.format(i))
 
 
 class EditorCanvas(GameCanvas2D):

@@ -3,7 +3,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
 from broccoli import register
-from broccoli.conf import settings
 from broccoli.layer import RandomTileLayer, SimpleTileLayer, JsonTileLayer, JsonObjectLayer, ExpandTileLayer, JsonItemLayer
 from broccoli.material import BaseObject, BaseItem, BaseTile
 from .list import UserDataFrame
@@ -185,7 +184,7 @@ class MapEditor(ttk.Frame):
         """作成中キャンバス欄をクリックされたら呼ばれる"""
         x, y = tile.x, tile.y
         if isinstance(self.select, BaseTile):
-            self.canvas_frame.canvas.delete(tile.id)
+            tile.layer.delete_material(tile)
             self.canvas_frame.canvas.tile_layer.create_material(
                 material_cls=self.select.copy(), x=x, y=y,
             )
