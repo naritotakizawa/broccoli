@@ -55,4 +55,3 @@ class Register:
 
 
 register = Register()
-from broccoli import funcstions  # load material functions
