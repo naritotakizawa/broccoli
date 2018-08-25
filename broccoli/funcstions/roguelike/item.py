@@ -1,3 +1,4 @@
+"""ローグライクシステムのアイテムに使える関数を提供する。"""
 from broccoli import register
 
 

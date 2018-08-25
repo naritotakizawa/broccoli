@@ -1,3 +1,4 @@
+"""タイルに関する、汎用的な関数を提供する。"""
 from broccoli import register
 from broccoli import const
 

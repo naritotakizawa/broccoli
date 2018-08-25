@@ -1,3 +1,4 @@
+"""アイテムレイヤの具象クラスを提供する。"""
 import json
 import random
 from broccoli import register
@@ -25,6 +26,7 @@ class RandomItemLayer(BaseItemLayer):
     def create_layer(self):
         for i in range(self.number_of_items):
             item = random.choice(self.items)
+            # ランダム配置の場合、向きや差分もランダムです。
             self.create_material(material_cls=item, direction=-1, diff=-1)
 
 

@@ -1,3 +1,4 @@
+"""オブゾェクトレイヤの具象クラスを提供する。"""
 import json
 import random
 from broccoli import register
@@ -65,6 +66,7 @@ class RandomObjectLayer(BaseObjectLayer):
     def create_layer(self):
         for i in range(self.number_of_enemies):
             enemy = random.choice(self.enemies)
+            # ランダム生成の場合は、向きや差分もランダム。
             self.create_material(material_cls=enemy, direction=-1, diff=-1)
 
 

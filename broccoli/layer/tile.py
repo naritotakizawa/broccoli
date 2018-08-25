@@ -1,3 +1,4 @@
+"""タイルレイヤの具象クラスを提供する。"""
 import json
 from broccoli import register
 from broccoli.layer import BaseTileLayer
@@ -51,7 +52,7 @@ class SimpleTileLayer(BaseTileLayer):
         for y, row in enumerate(self):
             for x, col in enumerate(row):
                 # 端っこなら、そこはPrivateTile(壁など)で詰める
-                if y == 0 or x == 0 or y == self.y_length - 1 or x ==self.x_length - 1:
+                if y == 0 or x == 0 or y == self.y_length - 1 or x == self.x_length - 1:
                     self.create_material(material_cls=self.outer_tile, x=x, y=y)
                 else:
                     self.create_material(material_cls=self.inner_tile, x=x, y=y)

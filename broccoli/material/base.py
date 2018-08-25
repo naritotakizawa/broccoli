@@ -10,9 +10,6 @@ objects_layerに格納されるもので、壁や木、岩、
 
 最後は、アイテム(item)です。
 
-tileとobjectの中にはどちらにも属せそうなものがありますが、この1背景につき1オブジェクトという仕様(システムクラスにもよります)や
-使いたい画像の透過具合(tileの画像内に透過部分があると、表示が上手くされません)などを見ながら使うと良いでしょう。
-
 """
 import inspect
 import random
@@ -22,30 +19,26 @@ from broccoli import const
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
-    attrs = []
-    func_attrs = []
+    attrs = []  # このマテリアルが持つ、固有の属性を書きます。
+    func_attrs = []  # マテリアルの固有属性のうち、関数となるものを書きます。
 
     def __init__(self, direction=0, diff=0, name=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
-        ・マップ上でのy座標、x座標
-        ・キャラを識別するためのid
-        ・自分が今いるゲームキャンバスオブジェクト
-        ・今のゲームキャンバスのシステムオブジェクト
+        - マテリアルの名前
+        - マテリアルの向き
+        - マテリアルの差分
+        - レイヤ内の位置にあたるx, y座標
+        - 所属するゲームキャンバスクラス
+        - 所属するゲームシステムクラス
+        - 所属するレイヤクラス(背景ならtile_layer等)
+        - マテリアルを識別するためのid
         を持っています。
 
-        x, y座標、canvas, systemはマップの作成時に設定されます。
-        idは、canvas.create_imageで返される一意な数値で、各キャラをcanvas上で識別するためのIDです。
-        canvasは、ゲームキャンバスクラス(tk.Canvasのサブクラス)のインスタンスで、描画などを担当します。
-        systemには、そのマップにおける移動や戦闘など、ゲームのシステム部分を担当するオブジェクトがあります。
+        更に、マテリアルの種類や具象クラスによっては固有の属性を持ちます。
 
-        idを使うことでself.canvas.itemconfig(id, image=self.image)といった描画画像の変更や
-        self.canvas.delete(id)での削除
-        self.canvas.coords(id, x, y)での移動に使えます。
-        idは必ず一意なものになります。
-
-        マテリアルを表す名前(name)、今の向き(direction)、向きの差分カウント(diff)などの属性もあります。
+        基本的に、レイヤクラスのcreate_materialを使ってマテリアルを生成することになります。
 
         """
         cls = type(self)
@@ -150,6 +143,7 @@ class BaseMaterial:
         return sorted_materials[0]
 
     def to_dict(self):
+
         result = {
             'name': self.name,
             'direction': self.direction,

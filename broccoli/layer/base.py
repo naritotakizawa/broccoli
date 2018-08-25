@@ -1,7 +1,7 @@
 """ゲームキャンバスにおける、レイヤーを扱うモジュールです。
 
 ゲームキャンバス内のデータは、レイヤーという層に格納されます。
-背景は背景レイヤーに、キャラクターや物体はオブジェクトレイヤー、という具合です。
+背景は背景レイヤーに、キャラクターや物体はオブジェクトレイヤー、アイテムはアイテムレイヤーという具合です。
 それらのレイヤーを作成するためのクラスを提供しています。
 
 """
@@ -17,6 +17,7 @@ class BaseLayer:
         self.canvas = None
 
     def put_material(self, material, x, y):
+        """レイヤに、マテリアルを登録する。"""
         self[y][x] = material
         material.x = x
         material.y = y
@@ -35,7 +36,7 @@ class BaseLayer:
                     yield x, y, col
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う"""
+        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う。"""
         # マテリアルの生成と初期設定
         material = self.canvas.system.create_material(material_cls, **kwargs)
 
@@ -50,7 +51,7 @@ class BaseLayer:
         return material
 
     def delete_material(self, material):
-        """マテリアルを削除する"""
+        """マテリアルを削除する。"""
         raise NotImplementedError
 
     def get_empty_space(self, material=None):
@@ -160,7 +161,8 @@ class BaseObjectLayer(BaseLayer):
     def get_empty_space(self, material=None):
         """空いているスペースを全てyieldで返す。
 
-        そのオブジェクトにとって、移動可能(配置可能)な座標を返します。
+        そのオブジェクトを受け入れるタイルであり、
+        まだオブジェクトがない座標ならばOK。
 
         """
         for x, y, tile in self.tile_layer.all():
@@ -208,13 +210,19 @@ class BaseItemLayer(BaseLayer):
         self.tile_layer = None
 
     def put_material(self, material, x, y):
+        """アイテムを配置する。
+
+        アイテムは1座標に複数格納できます。つまり、リストで管理しています。
+        そのため、アイテムの配置はappendメソッドを使います。
+
+        """
         self[y][x].append(material)
         material.x = x
         material.y = y
         material.layer = self
 
     def create(self):
-        """レイヤーの作成、描画を行う"""
+        """レイヤーの作成、描画を行う。"""
         self.layer = [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)]
         self.create_layer()
 
