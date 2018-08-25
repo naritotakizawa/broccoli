@@ -55,4 +55,4 @@ class Register:
 
 
 register = Register()
-from broccoli import funcstions  # import broccoliとされた時点で、registerに登録すべき関数をロードしにいく
+from broccoli import funcstions  # load material functions
