@@ -230,13 +230,10 @@ class EditorCanvas(GameCanvas2D):
         canvas_x = self.canvasx(event.x)
         canvas_y = self.canvasy(event.y)
         try:
-            x, y = self.get_index_from_xy(canvas_x, canvas_y)
+            tile, obj, items = self.abs_xy_to_materials(canvas_x, canvas_y)
         except TypeError:
             pass
         else:
-            tile = self.tile_layer[y][x]
-            obj = self.object_layer[y][x]
-            items = self.item_layer[y][x]
             if self.return_kind == 'tile':
                 self.click_callback(tile)
             elif self.return_kind == 'object':
@@ -250,13 +247,10 @@ class EditorCanvas(GameCanvas2D):
         canvas_x = self.canvasx(event.x)
         canvas_y = self.canvasy(event.y)
         try:
-            x, y = self.get_index_from_xy(canvas_x, canvas_y)
+            tile, obj, items = self.abs_xy_to_materials(canvas_x, canvas_y)
         except TypeError:
             pass
         else:
-            tile = self.tile_layer[y][x]
-            obj = self.object_layer[y][x]
-            items = self.item_layer[y][x]
             MaterialListFrame(tile=tile, obj=obj, items=items, master=self)
 
 

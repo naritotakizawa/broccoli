@@ -150,25 +150,19 @@ class GameCanvas2D(tk.Canvas):
         if file_path:
             self.item_layer.to_json(file_path)
 
-    def get_index_from_xy(self, click_x, click_y):
-        """絶対座標を元にレイヤ内でのxyを返す。
-
-        例えば、クリックされた座標にあるマテリアルを取得したい場合に有効です。
-
-        # クリック座標(event.x, event.y)を、キャンバス内の絶対座標に変換
-        canvas_x = self.canvasx(event.x)
-        canvas_y = self.canvasy(event.y)
-
-        x, y = self.get_index_from_xy(canvas_x, canvas_y)
-        tile = self.tile_layer[y][x]
-
-        """
-        click_x /= settings.CELL_WIDTH
-        click_y /= settings.CELL_HEIGHT
+    def abs_xy_to_layer_xy(self, abs_x, abs_y):
+        """絶対座標をレイヤ内のx,yに変換する。"""
+        layer_x = abs_x / settings.CELL_WIDTH
+        layer_y = abs_y / settings.CELL_HEIGHT
         for x, y, tile in self.tile_layer.all():
-            if x <= click_x <= x + 1:
-                if y <= click_y <= y + 1:
+            if x <= layer_x < x + 1:
+                if y <= layer_y < y + 1:
                     return x, y
+
+    def abs_xy_to_materials(self, abs_x, abs_y):
+        """クリックされた座標の3マテリアルを返す。"""
+        x, y = self.abs_xy_to_layer_xy(abs_x, abs_y)
+        return self.get_materials(x, y)
 
     def create_material(self, material):
         """マテリアルの描画を行う。

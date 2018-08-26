@@ -232,7 +232,7 @@ class ImgFrame(ttk.Frame):
             w2, h2 = self.splite_canvas.winfo_width(), self.splite_canvas.winfo_height()
 
             if xr >= x2 and xr < x2 + w2 and yr >= y2 and yr < y2 + h2:
-                rel_x, rel_y = self.get_index_from_xy(xr-x2, yr-y2)
+                rel_x, rel_y = self.abs_xy_to_layer_xy(xr-x2, yr-y2)
                 self.splite_list[rel_y][rel_x] = self.dragged.image
                 self.splite_canvas.create_image(
                     rel_x*settings.CELL_WIDTH,
@@ -246,7 +246,7 @@ class ImgFrame(ttk.Frame):
             self.dragged = None
             self.drag_id = None
 
-    def get_index_from_xy(self, click_x, click_y):
+    def abs_xy_to_layer_xy(self, click_x, click_y):
         """絶対座標を元にレイヤ内でのxyを返す"""
         click_x /= settings.CELL_WIDTH
         click_y /= settings.CELL_HEIGHT
