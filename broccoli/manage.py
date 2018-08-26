@@ -16,7 +16,7 @@ class SimpleGameManager:
 
     """
 
-    canvas_list = []
+    canvas_list = []  # TODO ここはゲームキャンバスを返す関数がはいるが、普通にクラスをそのまま入れてよいと思う。
     player = None
 
     # ゲームオーバーメッセージや、マップ名の表示に関する設定
@@ -52,10 +52,6 @@ class SimpleGameManager:
         canvas = self.canvas_list[self.current_canvas_index](self)
         self.current_canvas = canvas
         self.current_canvas.pack()
-
-        # canvasの作成処理が終わっていない為か、update_idletasksを呼び出さないと
-        # 右端や下端でのcanvasx(0), canvasy(0)は正しく座標を取れません。
-        canvas.update_idletasks()
         self.show_canvas_name()
         self.current_canvas.start()
 
@@ -65,7 +61,7 @@ class SimpleGameManager:
         self.next_canvas(next_canvas_index=0)
         self.root.mainloop()
 
-    def game_over(self):
+    def game_over(self):  # TODO ゲームオーバー処理はシステムクラスに書いて良い気がする
         """ゲームオーバー処理"""
         self.current_canvas.system.clear_key_event()
         x, y = self.current_canvas.get_current_position_center()
@@ -78,7 +74,7 @@ class SimpleGameManager:
             fill=self.color,
         )
 
-    def show_canvas_name(self):
+    def show_canvas_name(self):  # TODO マップ名表示は、システムクラスに書いて良い気がする
         """マップ名をかっこよく表示する"""
         x, y = self.current_canvas.get_current_position_center()
         text = ''

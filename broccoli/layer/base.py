@@ -36,7 +36,13 @@ class BaseLayer:
                     yield x, y, col
 
     def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う。"""
+        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う。
+
+        material_clsはクラスオブジェクトを渡せますが、インスタンスも渡せます。
+        インスタンスを渡した場合は、そのマテリアルの__init__が呼ばれません。
+        既にほかの場所で作成したマテリアルを流用したい場合は、インスタンスを渡すだけで済みます。
+
+        """
         # マテリアルの生成と初期設定
         material = self.canvas.system.create_material(material_cls, **kwargs)
 

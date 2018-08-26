@@ -3,7 +3,11 @@ from broccoli import register
 from broccoli import const
 
 
-@register.function('roguelike.object.action', system='roguelike', attr='action', material='object')
+@register.function(
+    'roguelike.object.action', system='roguelike',
+    attr='action', material='object',
+    verbose_name='通常行動'
+)
 def action(self):
     # 4方向に攻撃できそうなのがいれば、攻撃する
     for direction, x, y in self.get_4_positions():

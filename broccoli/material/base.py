@@ -40,6 +40,10 @@ class BaseMaterial:
 
         基本的に、レイヤクラスのcreate_materialを使ってマテリアルを生成することになります。
 
+        x, y, canvas, layer, system, id属性はインスタンス化時には設定されませんが、
+        インスタンス化後、順番に設定されていきます。
+        そのため、インスタンス化時の引数に渡しても意味はありません。
+
         """
         cls = type(self)
 
@@ -54,7 +58,7 @@ class BaseMaterial:
 
         # マテリアルインスタンスの属性を設定
         # kwargsにあればそれを、そうでなければクラス属性を設定
-        # 更に関数ならば、メソッドとして灯籠
+        # 更に関数ならば、メソッドとして登録
         for attr_name in cls.attrs:
             if attr_name in kwargs:
                 value = kwargs[attr_name]
@@ -85,7 +89,7 @@ class BaseMaterial:
         """向きを変え、その画像を反映させる。
 
         同じ向きを向いた場合は差分を増やし、そして画像を反映させます。
-        キャラクターを歩行させたい場合に便利です。
+        キャラクターを歩行させたい、歩行させる際のグラフィック更新に便利です。
 
         """
         # 前と違う向き
@@ -104,13 +108,13 @@ class BaseMaterial:
         """4方向の座標を取得するショートカットメソッドです。
 
         [
-            (DOWN, self.x, self.y+1),
+            (DOWN, self.x, self.y+1),にも
             (LEFT, self.x-1, self.y),
             (RIGHT, self.x+1, self.y),
             (UP, self.x, self.y - 1),
         ]
         といったリストを返します。
-        DOWNなどは向きに直接代入できる定数です。
+        DOWNなどは向きに直接代入(direction=DOWN)できる定数で、change_directionメソッドにもそのまま渡せます。
         また、その方向がマップの範囲外になる場合は無視されます。
         空のリストが返ったら、4方向が全てマップの範囲外ということです。
 
@@ -143,7 +147,13 @@ class BaseMaterial:
         return sorted_materials[0]
 
     def to_dict(self):
+        """マテリアルインスタンスの属性を、JSON化できる辞書として返す。
 
+        get_instance_attrsと殆ど同じですが、インスタンスの属性に関数がある場合は、
+        関数オブジェクトではなく関数の登録名(register.functionsデコレータの第一引数)を設定します。
+        主に、JSONシリアライズするのに使います。
+
+        """
         result = {
             'name': self.name,
             'direction': self.direction,
@@ -158,6 +168,13 @@ class BaseMaterial:
 
     @classmethod
     def get_class_attrs(cls):
+        """クラスの属性を辞書として返します。
+
+        マテリアルの主要なクラス属性を辞書として返します。
+        まだインスタンス化していない状態で、そのマテリアルクラスの属性を確認したい場合に有効です。
+        エディタでのマテリアル説明欄に使っています。
+
+        """
         result = {
             'name': cls.name,
         }
@@ -167,6 +184,18 @@ class BaseMaterial:
         return result
 
     def get_instance_attrs(self):
+        """マテリアルインスタンスの属性を返します。
+
+        to_dictと違い、関数オブジェクトもそのまま設定されます。
+        これはインスタンス化の引数にそのまま使える辞書で、マテリアルのコピーに使えます。
+
+        cls = type(material)
+        kwargs = material.get_instance_attrs()
+        create_material(material_cls=cls, **kwargs)
+
+        とすると、そのマテリアルのコピーを作成できます。
+
+        """
         result = {
             'name': self.name,
             'direction': self.direction,
@@ -178,11 +207,26 @@ class BaseMaterial:
         return result
 
     def copy(self):
+        """マテリアルのコピーを返します。
+
+        cls = type(material)
+        kwargs = material.get_instance_attrs()
+        create_material(material_cls=cls, **kwargs)
+
+        を
+
+        create_material(material_cls=material.copy())
+
+        と書くことができます。
+
+        """
         cls = type(self)
         kwargs = self.get_instance_attrs()
         return cls(**kwargs)
 
     def create_method(self, func):
+        """マテリアルのメソッドとして関数を登録します。"""
+
         # 既にメソッドだった場合はそのままにする
         # 既にメソッドになっているケースとしては、copyでの複製インスタンス化時
         if not inspect.ismethod(func):

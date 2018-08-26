@@ -1,7 +1,6 @@
-"""ゲームのシステム部分に関するモジュール。
+"""ローグライク系ゲームのゲームシステムを提供する。
 
-現在は、ローグライクに使えそうなシステムクラスだけを提供しています。
-つまり、左右上下に移動ができ、攻撃ができ、自分の番が終わったら敵達が行動する、といったものです。
+左右上下に移動ができ、攻撃ができ、自分の番が終わったら敵達が行動する、とゲームシステムが主です。
 
 """
 import tkinter as tk
@@ -34,7 +33,7 @@ class RogueLikeSystem(BaseSystem):
 
     def start(self):
         # 0.1 秒ぐらいごとに、ゲームの状態を監視する
-        self.canvas.after(100, self.monitor_game)
+        self.canvas.after(100, self.update_game_info)
         self.create_key_event()
 
     def get_key_events(self):
@@ -58,15 +57,21 @@ class RogueLikeSystem(BaseSystem):
         pass
 
     def update_game_info(self):
-        """ゲームの情報を表示する。
+        """ゲームの情報を更新する。
 
-        0.1秒ごとに呼ばれるので、常に表示したいデータをここで表示すると便利です。
+        デフォルトでは0.1秒ごとに呼ばれます。
+        定期的に更新したいデータや表示があれば、上書きしてください。
 
         """
         pass
 
     def monitor_game(self):
-        """ゲームの状態を監視。0.1秒ごとにhpなどを表示する。"""
+        """ゲームの状態を監視する。
+
+        update_game_infoを0.1秒毎に呼び出し、ゲーム情報を更新しています。
+        秒を変更したかったり、他に呼び出したいメソッドがあれば上書きしてください。
+
+        """
         self.update_game_info()
         self.canvas.after(100, self.monitor_game)
 
