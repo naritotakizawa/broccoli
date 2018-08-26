@@ -11,7 +11,7 @@ startメソッドを呼び出すことで、そのマップ又はゲームが動
 これにより、マップ毎に異なるゲームシステムの採用や、同じマップをいくつかのゲームシステムで動作させる、といったことができます。
 
 tk.Canvasのサブクラスなため、実際の画面への描画や、キャンバス情報の取得、アニメーションといった処理も担当します。
-
+todo マテリアルを受け付けるものは、posでもいけるように
 """
 import tkinter as tk
 from tkinter import filedialog
@@ -168,53 +168,6 @@ class GameCanvas2D(tk.Canvas):
                 if y <= click_y <= y + 1:
                     return x, y
 
-    def simple_move(self, obj_id, x, y):
-        """layer[y][x]にキャラクターを移動する、ショートカットメソッドです。
-
-        x, yはlayer内での座標です。
-
-        """
-        self.coords(obj_id, x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT)
-
-    def move_to_animation(self, obj_id, from_x, from_y, to_x, to_y, times=0.1, frame=10):
-        """今の場所から、layer[y][x]に向かって移動するアニメーションを行います。
-
-        x, yはlayer内の座標です。
-        timesの時間をかけて、frame回描画します。
-
-        """
-        current_x = from_x * settings.CELL_WIDTH
-        current_y = from_y * settings.CELL_HEIGHT
-        target_x = to_x * settings.CELL_WIDTH
-        target_y = to_y * settings.CELL_HEIGHT
-        diff_x = target_x - current_x
-        diff_y = target_y - current_y
-        step_x = diff_x / frame
-        step_y = diff_y / frame
-        for i in range(1, frame+1):
-            self.coords(obj_id, current_x+step_x*i, current_y+step_y*i)
-            self.update_idletasks()
-            self.after(int(times/frame*1000))
-            self.lift(obj_id)
-
-    def simple_damage_line(self, x, y, width=2, fill='red', times=0.1):
-        """キャラの右上から左下にかけて、線をつける。
-
-        x, yはlayer内の座標です。
-
-        """
-        damage_line = self.create_line(
-            x*settings.CELL_WIDTH+settings.CELL_WIDTH,  # セルの幅も加えることを忘れずに
-            y*settings.CELL_HEIGHT,
-            x*settings.CELL_WIDTH,
-            y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,  # セルの高さも加えることを忘れずに
-            width=width, fill=fill,
-        )
-        self.update_idletasks()  # すぐに描画する
-        # デフォルトでは、0.1秒後にダメージ線を消す
-        self.after(int(times*1000))
-        self.delete(damage_line)
-
     def create_material(self, material):
         """マテリアルの描画を行う。
 
@@ -230,3 +183,34 @@ class GameCanvas2D(tk.Canvas):
             image=material.image, anchor='nw'
         )
         material.id = material_id
+
+    def get_materials(self, pos):
+        """その座標のマテリアルを返す。"""
+        y, x = pos
+        tile = self.tile_layer[y][x]
+        obj = self.object_layer[y][x]
+        items = self.item_layer[y][x]
+        return tile, obj, items
+
+    def draw_cell_line(self):
+        """各セルに線を引き、1つ1つのセルをわかりやすくします。"""
+        for x, y, tile in self.tile_layer.all():
+            self.create_rectangle(
+                x*settings.CELL_WIDTH,
+                y*settings.CELL_HEIGHT,
+                x*settings.CELL_WIDTH+settings.CELL_WIDTH,
+                y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,
+                tag='line'
+            )
+
+    def highlight_material(self, material, outline='red', width=10):
+        """マテリアルを強調表示する。"""
+        self.create_rectangle(
+            material.x * settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT,
+            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
+            tag='highlight',
+            outline=outline,
+            width=width
+        )

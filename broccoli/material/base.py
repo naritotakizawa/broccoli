@@ -232,3 +232,12 @@ class BaseMaterial:
         if not inspect.ismethod(func):
             func = types.MethodType(func, self)
         return func
+
+    def delete(self):
+        """マテリアルを削除する。
+
+        material.layer.delete_material(material)
+        を、簡単に書くためのショートカットです。
+
+        """
+        self.layer.delete_material(self)

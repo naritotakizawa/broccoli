@@ -5,6 +5,7 @@
 """
 import tkinter as tk
 import tkinter.ttk as ttk
+from broccoli import register
 from broccoli.conf import settings
 from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
 from broccoli.material.object import *
@@ -33,7 +34,8 @@ class RogueLikeSystem(BaseSystem):
 
     def start(self):
         # 0.1 秒ぐらいごとに、ゲームの状態を監視する
-        self.canvas.after(100, self.update_game_info)
+        self.canvas.after(100, self.monitor_game)
+        self.show_map_name()
         self.create_key_event()
 
     def get_key_events(self):
@@ -115,6 +117,87 @@ class RogueLikeSystem(BaseSystem):
         """アイテムリストを表示する。"""
         pass
 
+    def show_map_name(self):
+        """マップ名をかっこよく表示する。"""
+        x, y = self.canvas.get_current_position_center()
+        text = ''
+        for char in self.canvas.name:
+            text += char
+            self.canvas.delete('start_message')
+            self.canvas.create_text(
+                x,
+                y,
+                anchor='center',
+                text=text,
+                font=self.font,
+                fill=self.color,
+                tag='start_message',
+            )
+            self.canvas.after(100)
+            self.canvas.update_idletasks()
+        self.canvas.after(1000)
+        self.canvas.delete('start_message')
+
+    def game_over(self):
+        """ゲームオーバー処理。"""
+        self.clear_key_event()
+        x, y = self.canvas.get_current_position_center()
+        self.canvas.create_text(
+            x,
+            y,
+            anchor='center',
+            text='Game Over',
+            font=self.font,
+            fill=self.color,
+        )
+
+    def simple_move(self, obj_id, x, y):
+        """layer[y][x]にキャラクターを移動する、ショートカットメソッドです。
+
+        x, yはlayer内での座標です。
+
+        """
+        self.canvas.coords(obj_id, x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT)
+
+    def move_to_animation(self, obj_id, from_x, from_y, to_x, to_y, times=0.1, frame=10):
+        """今の場所から、layer[y][x]に向かって移動するアニメーションを行います。
+
+        x, yはlayer内の座標です。
+        timesの時間をかけて、frame回描画します。
+
+        """
+        current_x = from_x * settings.CELL_WIDTH
+        current_y = from_y * settings.CELL_HEIGHT
+        target_x = to_x * settings.CELL_WIDTH
+        target_y = to_y * settings.CELL_HEIGHT
+        diff_x = target_x - current_x
+        diff_y = target_y - current_y
+        step_x = diff_x / frame
+        step_y = diff_y / frame
+        for i in range(1, frame+1):
+            self.canvas.coords(obj_id, current_x+step_x*i, current_y+step_y*i)
+            self.canvas.update_idletasks()
+            self.canvas.after(int(times/frame*1000))
+            self.canvas.lift(obj_id)
+
+    def simple_damage_line(self, x, y, width=2, fill='red', times=0.1):
+        """キャラの右上から左下にかけて、線をつける。
+
+        x, yはlayer内の座標です。
+
+        """
+        damage_line = self.canvas.create_line(
+            x*settings.CELL_WIDTH+settings.CELL_WIDTH,  # セルの幅も加えることを忘れずに
+            y*settings.CELL_HEIGHT,
+            x*settings.CELL_WIDTH,
+            y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,  # セルの高さも加えることを忘れずに
+            width=width, fill=fill,
+        )
+        self.canvas.update_idletasks()  # すぐに描画する
+        # デフォルトでは、0.1秒後にダメージ線を消す
+        self.canvas.after(int(times*1000))
+        self.canvas.delete(damage_line)
+
 
 class RogueWithPlayer(RogueLikeSystem):
     """プレイヤーがいるローグライクシステム。"""
@@ -124,7 +207,7 @@ class RogueWithPlayer(RogueLikeSystem):
         # プレイヤーがいないとダメ
         self.player = self.canvas.object_layer.create_material(
             material_cls=self.canvas.manager.player,
-            name='あなた', kind=const.PLAYER
+            name='あなた', kind=const.PLAYER, die=register.functions['roguelike.object.player_die']
         )
         self.canvas.move_camera(self.player)  # 主人公位置に合わせて表示部分を動かす
 

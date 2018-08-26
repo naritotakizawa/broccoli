@@ -82,8 +82,8 @@ class BaseList(ttk.Frame):
         if isinstance(material, (list,)):
             material = material[0]
 
-        self.canvas.delete('redline')
-        self.canvas.create_red_line(material)
+        self.canvas.delete('highlight')
+        self.canvas.highlight_material(material)
         self.select_callback(material)
 
 

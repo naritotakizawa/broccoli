@@ -3,11 +3,7 @@ from broccoli import register
 from broccoli import const
 
 
-@register.function(
-    'roguelike.object.action', system='roguelike',
-    attr='action', material='object',
-    verbose_name='通常行動'
-)
+@register.function('roguelike.object.action', system='roguelike', attr='action', material='object')
 def action(self):
     # 4方向に攻撃できそうなのがいれば、攻撃する
     for direction, x, y in self.get_4_positions():
@@ -69,7 +65,7 @@ def move(self, tile):
     self.x = tile.x
 
     # 移動する
-    self.canvas.simple_move(self.id, self.x, self.y)
+    self.system.simple_move(self.id, self.x, self.y)
 
     # アイテムの取得
     items = self.canvas.item_layer[self.y][self.x]
@@ -78,7 +74,7 @@ def move(self, tile):
         for item in items:
             item.owner = self
             self.items.append(item)
-            item.layer.delete_material(item)
+            item.delete()
             messages.append('{}は{}を拾った!'.format(self.name, item.name))
 
         self.system.add_message('\n'.join(messages))
@@ -111,7 +107,7 @@ def is_enemy(self, obj):
 @register.function('roguelike.object.on_damage', system='roguelike', attr='on_damage', material='object')
 def on_damage(self, tile, obj):
     """ダメージをうける。"""
-    self.canvas.simple_damage_line(self.x, self.y)
+    self.system.simple_damage_line(self.x, self.y)
     self.hp -= obj.power
     self.system.add_message('{}の攻撃!\n{}は{}のダメージを受けた!'.format(obj.name, self.name, obj.power))
     if self.hp <= 0:
@@ -122,7 +118,14 @@ def on_damage(self, tile, obj):
 def die(self, tile, obj):
     """死んだらキャンバス上から消える"""
     self.system.add_message('{}は倒れた!'.format(self.name))
-    self.layer.delete_material(self)
+    self.delete()
+
+
+@register.function('roguelike.object.player_die', system='roguelike', attr='die', material='object')
+def player_die(self, tile, obj):
+    """プレイヤーが死んだらゲームオーバー"""
+    die(self, tile, obj)
+    self.system.game_over()
 
 
 @register.function('roguelike.object.attack', system='roguelike', attr='attack', material='object')
@@ -139,14 +142,14 @@ def attack(self, tile, obj):
 
     """
     # 攻撃モーション
-    self.canvas.move_to_animation(self.id, self.x, self.y, tile.x, tile.y)
+    self.system.move_to_animation(self.id, self.x, self.y, tile.x, tile.y)
 
     # 移動先にオブジェクトがあれば、そいつのon_damageを呼び出す
     if obj is not None:
         obj.on_damage(tile, self)
 
     # 基の位置に戻す
-    self.canvas.simple_move(self.id, self.x, self.y)
+    self.system.simple_move(self.id, self.x, self.y)
 
 
 @register.function('roguelike.object.towards', system='roguelike', attr='towards', material='object')

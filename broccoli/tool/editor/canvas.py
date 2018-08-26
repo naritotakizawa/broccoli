@@ -61,7 +61,7 @@ def int_command(material, attr_name, label):
 
 def delete_command(material, frame):
     def _delete_command():
-        material.layer.delete_material(material)
+        material.delete()
         frame.destroy()
     return _delete_command
 
@@ -224,28 +224,6 @@ class EditorCanvas(GameCanvas2D):
         self.bind('<3>', self.show_materials)
         if click_callback is not None:
             self.bind('<1>', self.click)
-
-    def draw_cell_line(self):
-        """各セルに線を引き、1つ1つのセルをわかりやすくします。"""
-        for x, y, tile in self.tile_layer.all():
-            self.create_rectangle(
-                x*settings.CELL_WIDTH,
-                y*settings.CELL_HEIGHT,
-                x*settings.CELL_WIDTH+settings.CELL_WIDTH,
-                y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,
-                tag='line'
-            )
-
-    def create_red_line(self, material):
-        self.create_rectangle(
-            material.x * settings.CELL_WIDTH,
-            material.y * settings.CELL_HEIGHT,
-            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
-            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
-            tag='redline',
-            outline='red',
-            width=10
-        )
 
     def click(self, event):
         """クリックされた座標の背景、タイルを返す"""
