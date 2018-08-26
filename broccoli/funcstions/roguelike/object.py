@@ -65,7 +65,7 @@ def move(self, tile):
     self.x = tile.x
 
     # 移動する
-    self.system.simple_move(self.id, self.x, self.y)
+    self.system.simple_move(self.id, material=self)
 
     # アイテムの取得
     items = self.canvas.item_layer[self.y][self.x]
@@ -107,7 +107,7 @@ def is_enemy(self, obj):
 @register.function('roguelike.object.on_damage', system='roguelike', attr='on_damage', material='object')
 def on_damage(self, tile, obj):
     """ダメージをうける。"""
-    self.system.simple_damage_line(self.x, self.y)
+    self.system.simple_damage_line(material=self)
     self.hp -= obj.power
     self.system.add_message('{}の攻撃!\n{}は{}のダメージを受けた!'.format(obj.name, self.name, obj.power))
     if self.hp <= 0:
@@ -142,14 +142,14 @@ def attack(self, tile, obj):
 
     """
     # 攻撃モーション
-    self.system.move_to_animation(self.id, self.x, self.y, tile.x, tile.y)
+    self.system.move_to_animation(self.id, from_material=self, to_material=tile)
 
     # 移動先にオブジェクトがあれば、そいつのon_damageを呼び出す
     if obj is not None:
         obj.on_damage(tile, self)
 
     # 基の位置に戻す
-    self.system.simple_move(self.id, self.x, self.y)
+    self.system.simple_move(self.id, material=self)
 
 
 @register.function('roguelike.object.towards', system='roguelike', attr='towards', material='object')

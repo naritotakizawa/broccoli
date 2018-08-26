@@ -11,10 +11,11 @@ startメソッドを呼び出すことで、そのマップ又はゲームが動
 これにより、マップ毎に異なるゲームシステムの採用や、同じマップをいくつかのゲームシステムで動作させる、といったことができます。
 
 tk.Canvasのサブクラスなため、実際の画面への描画や、キャンバス情報の取得、アニメーションといった処理も担当します。
-todo マテリアルを受け付けるものは、posでもいけるように
+
 """
 import tkinter as tk
 from tkinter import filedialog
+from broccoli import parse_xy
 from broccoli.conf import settings
 from broccoli.layer import EmptyObjectLayer, EmptyItemLayer
 from broccoli.system import BaseSystem
@@ -77,7 +78,7 @@ class GameCanvas2D(tk.Canvas):
         # ゲームのシステムクラスを動作させる。
         self.system.start()
 
-    def move_camera(self, target):
+    def move_camera(self, x=None, y=None, material=None):
         """ターゲットにピントを合わせる。
 
         実際は、キャンバス内をスクロールしているだけです。
@@ -88,12 +89,13 @@ class GameCanvas2D(tk.Canvas):
         1.0ならば1000px部分までスクロール、0.5ならば500px部分までスクロール、のように動作します。
 
         """
+        x, y = parse_xy(x, y, material)
 
         # 単純にtarget.y / self.tile_layer.y_lengthのようにすると、キャラクターが一番上や左に配置されるようにスクロールされる
         # 5セル分の表示ならば、更に上を2つ空けるほうが見栄えがよくなります。
         # DISPLAY_Y_NUM//2 とすると、5セルなら上に2つ空けて、7セルなら上に3つ空けて、といった具合になります。
-        fractal_x = (target.x-settings.DISPLAY_X_NUM//2) / self.tile_layer.x_length
-        fractal_y = (target.y-settings.DISPLAY_Y_NUM//2) / self.tile_layer.y_length
+        fractal_x = (x-settings.DISPLAY_X_NUM//2) / self.tile_layer.x_length
+        fractal_y = (y-settings.DISPLAY_Y_NUM//2) / self.tile_layer.y_length
         self.xview_moveto(fractal_x)
         self.yview_moveto(fractal_y)
 
@@ -184,9 +186,9 @@ class GameCanvas2D(tk.Canvas):
         )
         material.id = material_id
 
-    def get_materials(self, pos):
-        """その座標のマテリアルを返す。"""
-        y, x = pos
+    def get_materials(self, x=None,  y=None, material=None):
+        """その座標の3マテリアルを返す。"""
+        x, y = parse_xy(x, y, material)
         tile = self.tile_layer[y][x]
         obj = self.object_layer[y][x]
         items = self.item_layer[y][x]

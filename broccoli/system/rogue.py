@@ -5,7 +5,7 @@
 """
 import tkinter as tk
 import tkinter.ttk as ttk
-from broccoli import register
+from broccoli import register, parse_xy
 from broccoli.conf import settings
 from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
 from broccoli.material.object import *
@@ -151,21 +151,25 @@ class RogueLikeSystem(BaseSystem):
             fill=self.color,
         )
 
-    def simple_move(self, obj_id, x, y):
-        """layer[y][x]にキャラクターを移動する、ショートカットメソッドです。
-
-        x, yはlayer内での座標です。
-
-        """
+    def simple_move(self, obj_id, x=None, y=None, material=None):
+        """layer[y][x]にキャラクターを移動する、ショートカットメソッドです。"""
+        x, y = parse_xy(x, y, material)
         self.canvas.coords(obj_id, x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT)
 
-    def move_to_animation(self, obj_id, from_x, from_y, to_x, to_y, times=0.1, frame=10):
+    def move_to_animation(
+            self, obj_id,
+            from_x=None, from_y=None, from_material=None,
+            to_x=None, to_y=None, to_material=None,
+            times=0.1, frame=10):
         """今の場所から、layer[y][x]に向かって移動するアニメーションを行います。
 
-        x, yはlayer内の座標です。
         timesの時間をかけて、frame回描画します。
 
         """
+        # まずレイヤ内の座標に変換する。
+        from_x, from_y = parse_xy(from_x, from_y, from_material)
+        to_x, to_y = parse_xy(to_x, to_y, to_material)
+
         current_x = from_x * settings.CELL_WIDTH
         current_y = from_y * settings.CELL_HEIGHT
         target_x = to_x * settings.CELL_WIDTH
@@ -180,12 +184,13 @@ class RogueLikeSystem(BaseSystem):
             self.canvas.after(int(times/frame*1000))
             self.canvas.lift(obj_id)
 
-    def simple_damage_line(self, x, y, width=2, fill='red', times=0.1):
+    def simple_damage_line(self, x=None, y=None, material=None, width=2, fill='red', times=0.1):
         """キャラの右上から左下にかけて、線をつける。
 
         x, yはlayer内の座標です。
 
         """
+        x, y = parse_xy(x, y, material)
         damage_line = self.canvas.create_line(
             x*settings.CELL_WIDTH+settings.CELL_WIDTH,  # セルの幅も加えることを忘れずに
             y*settings.CELL_HEIGHT,
@@ -209,7 +214,7 @@ class RogueWithPlayer(RogueLikeSystem):
             material_cls=self.canvas.manager.player,
             name='あなた', kind=const.PLAYER, die=register.functions['roguelike.object.player_die']
         )
-        self.canvas.move_camera(self.player)  # 主人公位置に合わせて表示部分を動かす
+        self.canvas.move_camera(material=self.player)  # 主人公位置に合わせて表示部分を動かす
 
     def move(self, event):
         """主人公の移動処理。"""
@@ -233,7 +238,7 @@ class RogueWithPlayer(RogueLikeSystem):
             if obj is None and tile.is_public(obj=self.player):
                 self.player.move(tile)
                 try:
-                    self.canvas.move_camera(self.player)
+                    self.canvas.move_camera(material=self.player)
                 except Exception:
                     # moveは背景のon_selfを呼び出しますが、その際次マップへ移動している可能性があります。
                     # 次マップへ移動している場合、canvas.move_cameraが参照しているcanvasオブジェクトは
@@ -262,7 +267,7 @@ class RogueWithPlayer(RogueLikeSystem):
         tile = self.canvas.tile_layer[y][x]
         obj = self.canvas.object_layer[y][x]
         self.player.attack(tile, obj)
-        self.canvas.move_camera(self.player)
+        self.canvas.move_camera(material=self.player)
         self.act_objects(exclude=[self.player])
         self.turn += 1
 
@@ -328,7 +333,7 @@ class RogueNoPlayer(RogueLikeSystem):
         # 中央にカメラ移動
         self.x = self.canvas.tile_layer.x_length // 2
         self.y = self.canvas.tile_layer.y_length // 2
-        self.canvas.move_camera(self.canvas.tile_layer[self.y][self.x])
+        self.canvas.move_camera(self.x, self.y)
 
     def move(self, event):
         """カメラ移動処理。"""
@@ -347,7 +352,7 @@ class RogueNoPlayer(RogueLikeSystem):
 
         self.x = x
         self.y = y
-        self.canvas.move_camera(self.canvas.tile_layer[self.y][self.x])
+        self.canvas.move_camera(self.x, self.y)
 
     def attack(self, event):
         """攻撃キーで次ターンになります。"""

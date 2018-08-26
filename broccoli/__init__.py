@@ -4,6 +4,22 @@ from .__version__ import (
 )
 
 
+def parse_xy(x=None, y=None, material=None):
+    """x, y座標(レイヤの)を返す。
+
+    (x, y)というタプルか、マテリアルを受け取り、(x, y)というタプルを返します。
+    どちらの引数も指定がない場合は例外を送出します。
+
+    """
+    if material is not None:
+        return material.x, material.y
+
+    elif x is not None and y is not None:
+        return x, y
+
+    raise Exception('座標(x, y)か、ピントを合わせるマテリアルを指定してください。')
+
+
 class Register:
 
     def __init__(self):
