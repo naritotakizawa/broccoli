@@ -218,3 +218,13 @@ def get_enemies(self, see_x=None, see_y=None):
         if abs(self.x-x) <= see_x and abs(self.y-y) <= see_y:
             if self.is_enemy(obj) and obj != self:
                 yield obj
+
+
+@register.function('roguelike.object.simple_talk', system='roguelike', attr='talk', material='object')
+def simple_talk(self, see_x=None, see_y=None):
+    """シンプルにしゃべる。
+
+    message属性の内容を、そのまま喋ります。
+
+    """
+    self.system.add_message(self.message)

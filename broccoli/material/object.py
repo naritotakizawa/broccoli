@@ -30,9 +30,11 @@ class RogueLikeObject(BaseObject):
     die = roguelike.object.die
     towards = roguelike.object.towards
     get_enemies = roguelike.object.get_enemies
+    talk = roguelike.object.simple_talk
+    message = 'Hello World!'
 
     attrs = [
         'see_x', 'see_y', 'kind', 'hp', 'max_hp', 'power', 'items',
-        'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies'
+        'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies', 'talk', 'message'
     ]
-    func_attrs = ['action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies']
+    func_attrs = ['action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies', 'talk']
