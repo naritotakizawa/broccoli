@@ -1,9 +1,9 @@
 """エディタで使うゲームキャンバスクラスを提供するモジュール
 
 broccoli.canvasにあるゲームキャンバスクラスを元に、エディタで使いやすくするためのクラスを提供しています。
+キャンバス内をクリックした際の挙動をカスタマイズしたり、
+右クリックで各マテリアルの情報確認・変更ができる、といった機能が追加されています。
 
-broccoli.canvasのゲームキャンバスと違うのは、システムクラスが不要なことと
-キャンバス内をクリックした際、そこにある背景やオブジェクトの取得や交換といった機能をサポートしていることです。
 また、これらのキャンバスにスクロールバーをつけたttk.Frameクラスのサブクラスも提供しています。
 
 """
@@ -17,15 +17,23 @@ from broccoli.canvas import GameCanvas2D
 from broccoli.material import BaseTile
 from .window import SearchWindow, OneInputWindow
 
+# gridでのsticky=に指定できる定数。全方向に引き伸ばす。
 STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
 
 
 class TestTile(BaseTile):
+    """ダミータイル。
+
+    マップエディタを開いた際の初期タイルとして配置されています。
+    tile_layerは必ず何らかのタイルが必要なため、初回はこのタイルを使っています。
+
+    """
     name = 'テストタイル'
     image = NoDirection(os.path.join(settings.BROCCOLI_IMG_DIR, 'test.png'))
 
 
 def method_command(material, attr_name, label):
+    """マテリアルの属性(メソッド)を変更する。"""
     def _method_command():
         def callback(func):
             method = material.create_method(func)
@@ -38,6 +46,7 @@ def method_command(material, attr_name, label):
 
 
 def str_command(material, attr_name, label):
+    """マテリアルの属性(文字列)を変更する。"""
     def _str_command():
         def callback(value):
             setattr(material, attr_name, value)
@@ -49,6 +58,7 @@ def str_command(material, attr_name, label):
 
 
 def int_command(material, attr_name, label):
+    """マテリアルの属性(数値)を変更する。"""
     def _int_command():
         def callback(value):
             setattr(material, attr_name, value)
@@ -60,6 +70,7 @@ def int_command(material, attr_name, label):
 
 
 def delete_command(material, frame):
+    """マテリアルと、そのマテリアル情報表示部分を削除する。"""
     def _delete_command():
         material.delete()
         frame.destroy()
@@ -67,6 +78,7 @@ def delete_command(material, frame):
 
 
 class MaterialListFrame(tk.Toplevel):
+    """各マテリアルの情報確認、変更、削除をするポップアップウィンドウ。"""
 
     def __init__(self, tile, obj, items, **kwargs):
         super().__init__(**kwargs)

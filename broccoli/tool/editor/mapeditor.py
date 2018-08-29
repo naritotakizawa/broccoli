@@ -1,4 +1,4 @@
-"""エディタエディタ"""
+"""マップエディタ"""
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
@@ -13,6 +13,12 @@ STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
 
 
 class CustomHighLight(tk.Toplevel):
+    """マテリアルの関数を検索するためのポップアップウィンドウ。
+
+    「タイル」の「is_public」が「return_true」なものを全て強調表示したい、
+    といったケースに使えるウィジェットです。
+
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

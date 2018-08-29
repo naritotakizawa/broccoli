@@ -1,3 +1,4 @@
+"""ユーザー定義の関数を検索したり、取得したい場合に使えるフレームを提供しています。"""
 import tkinter as tk
 import tkinter.ttk as ttk
 from broccoli import register
@@ -6,6 +7,12 @@ STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
 
 
 class SearchFrame(ttk.Frame):
+    """ユーザー定義関数検索用フレーム。
+
+    対象システム、対象属性、対象マテリアルなどの項目でユーザー定義関数を絞り込むことができます。
+    また、callback関数を渡すことで関数選択した際の挙動をカスタマイズすることもできます。
+
+    """
 
     def __init__(self, master=None, select_callback=print, **kwargs):
         super().__init__(master=master, **kwargs)
@@ -51,6 +58,12 @@ class SearchFrame(ttk.Frame):
         self.rowconfigure(3, weight=1)
 
     def update_list(self, event):
+        """ユーザー定義関数の一覧を更新する。
+
+        選択されている対象システム、属性、マテリアルの内容で
+        ユーザー定義関数を絞り込みます。
+
+        """
         self.func_list.delete(0, 'end')
         system = self.system_value.get() or None
         attr = self.attr_value.get() or None
@@ -60,14 +73,12 @@ class SearchFrame(ttk.Frame):
             self.func_list.insert('end', func_name)
 
     def selection(self, event):
+        """関数選択した際に呼ばれる。"""
         select_index = self.func_list.curselection()
         if select_index:
             func_name = self.func_list.get(select_index)
             func = register.functions[func_name]
             self.select_callback(func)
-
-
-
 
 
 if __name__ == '__main__':

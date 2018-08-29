@@ -1,9 +1,11 @@
+"""ポップアップするウィンドウを提供しています。"""
 import tkinter as tk
 import tkinter.ttk as ttk
 from .search import SearchFrame
 
 
 class SearchWindow(tk.Toplevel):
+    """ユーザー定義関数検索フレームを、トップレベルウィジェットにしたもの。"""
 
     def __init__(self, master=None, select_callback=print, **kwargs):
         super().__init__(master=master, **kwargs)
@@ -19,6 +21,7 @@ class SearchWindow(tk.Toplevel):
 
 
 class OneInputWindow(tk.Toplevel):
+    """1つの入力欄があるポップアップウィンドウ。"""
 
     def __init__(self, master=None, select_callback=print, cast=None, **kwargs):
         super().__init__(master=master, **kwargs)
