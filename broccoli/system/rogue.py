@@ -48,6 +48,7 @@ class RogueLikeSystem(BaseSystem):
             ('<{}>'.format(settings.ATTACK_KEY), self.attack),
             ('<{}>'.format (settings.SHOW_ITEM_KEY), self.show_item_dialog),
             ('<{}>'.format (settings.SHOW_MESSAGE_KEY), self.message.show),
+            ('<{}>'.format(settings.TALK_KEY), self.talk),
         ]
 
     def move(self, event):
@@ -203,6 +204,10 @@ class RogueLikeSystem(BaseSystem):
         self.canvas.after(int(times*1000))
         self.canvas.delete(damage_line)
 
+    def talk(self, event):
+        """話しかける。"""
+        pass
+
 
 class RogueWithPlayer(RogueLikeSystem):
     """プレイヤーがいるローグライクシステム。"""
@@ -322,6 +327,25 @@ class RogueWithPlayer(RogueLikeSystem):
         """アイテムリストを表示する。"""
         dialog = self.show_item_dialog_class(parent=self, canvas=self.canvas)
         dialog.show(items=self.player.items, callback=lambda item: item.use())
+
+    def talk(self, event):
+        y, x = self.player.y, self.player.x
+        if self.player.direction == const.DOWN:
+            y += 1
+        elif self.player.direction == const.LEFT:
+            x -= 1
+        elif self.player.direction == const.RIGHT:
+            x += 1
+        elif self.player.direction == const.UP:
+            y -= 1
+
+        # マップの範囲外ならやめる
+        if not self.canvas.check_position(x, y):
+            return
+
+        obj = self.canvas.object_layer[y][x]
+        if obj is not None:
+            obj.talk(self.player)
 
 
 class RogueNoPlayer(RogueLikeSystem):

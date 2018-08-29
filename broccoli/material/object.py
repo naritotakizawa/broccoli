@@ -5,7 +5,7 @@ object_layerに格納されます。
 """
 
 from broccoli import const
-from broccoli.funcstions import roguelike
+from broccoli.funcstions import roguelike, generic
 from broccoli.material.base import BaseMaterial
 
 
@@ -30,8 +30,8 @@ class RogueLikeObject(BaseObject):
     die = roguelike.object.die
     towards = roguelike.object.towards
     get_enemies = roguelike.object.get_enemies
-    talk = roguelike.object.simple_talk
-    message = 'Hello World!'
+    talk = generic.do_nothing
+    message = ''
 
     attrs = [
         'see_x', 'see_y', 'kind', 'hp', 'max_hp', 'power', 'items',

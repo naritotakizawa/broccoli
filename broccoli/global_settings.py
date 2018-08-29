@@ -20,6 +20,7 @@ DOWN_KEY = 's'  # 下に移動
 ATTACK_KEY = 'z'  # 攻撃や決定
 SHOW_ITEM_KEY = 'i'  # アイテムの表示
 SHOW_MESSAGE_KEY = 'l'  # ログ表示キー
+TALK_KEY = 't'  # 喋る
 
 # ゲーム中のテキストのデフォルトフォント
 DEFAULT_TEXT_FONT = 'ＭＳ ゴシック'

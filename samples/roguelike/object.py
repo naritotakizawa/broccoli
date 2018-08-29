@@ -1,5 +1,5 @@
 from broccoli import register, const
-from broccoli.funcstions.generic import do_nothing
+from broccoli.funcstions import generic, roguelike
 from broccoli.material import RogueLikeObject
 from broccoli.img.loader import MultiDirection, NoDirection, MultiDirectionWithDiff, NormalSplite
 
@@ -11,6 +11,8 @@ class Sheep(RogueLikeObject):
     hp = max_hp = 15
     power = 5
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'メェー!'
 
 
 @register.object
@@ -38,6 +40,8 @@ class Sparrow(RogueLikeObject):
     hp = max_hp = 7
     power = 2
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'チュンチュン、羊です。'
 
 
 @register.object
@@ -72,4 +76,4 @@ class Dog(RogueLikeObject):
 class MapTip1(RogueLikeObject):
     name = 'マップチップ1'
     image = NormalSplite('img/tipset1.png')
-    action = do_nothing
+    action = generic.do_nothing

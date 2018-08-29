@@ -221,10 +221,11 @@ def get_enemies(self, see_x=None, see_y=None):
 
 
 @register.function('roguelike.object.simple_talk', system='roguelike', attr='talk', material='object')
-def simple_talk(self, see_x=None, see_y=None):
+def simple_talk(self, obj):
     """シンプルにしゃべる。
 
     message属性の内容を、そのまま喋ります。
+    obj引数は、話しかけてきた相手です。多くの場合、プレイヤーになります。
 
     """
     self.system.add_message(self.message)
