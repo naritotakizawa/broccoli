@@ -228,4 +228,8 @@ def simple_talk(self, obj):
     obj引数は、話しかけてきた相手です。多くの場合、プレイヤーになります。
 
     """
-    self.system.add_message(self.message)
+    if isinstance(self.message, str):
+        self.system.add_message(self.message)
+    else:
+        for mes in self.message:
+            self.system.add_message(mes)
