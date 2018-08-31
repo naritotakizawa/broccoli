@@ -45,6 +45,16 @@ class BaseLayer:
             else:
                 return material
 
+    def filter(self, **kwargs):
+        """レイヤ内のマテリアルを検索する。"""
+        for _, _, material in self.all():
+            for key, value in kwargs.items():
+                attr = getattr(material, key, None)
+                if attr != value:
+                    break
+            else:
+                yield material
+
     def create_material(self, material_cls, x=None, y=None, **kwargs):
         """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う。
 
@@ -296,3 +306,14 @@ class BaseItemLayer(BaseLayer):
                         break
                 else:
                     return item
+
+    def filter(self, **kwargs):
+        """レイヤ内のアイテムを検索する。"""
+        for _, _, items in self.all():
+            for item in items:
+                for key, value in kwargs.items():
+                    attr = getattr(item, key, None)
+                    if attr != value:
+                        break
+                else:
+                    yield item
