@@ -212,12 +212,19 @@ class RogueLikeSystem(BaseSystem):
 class RogueWithPlayer(RogueLikeSystem):
     """プレイヤーがいるローグライクシステム。"""
 
+    def __init__(self, message_class=LogAndActiveMessageDialog, show_item_dialog_class=ListDialog, x=None, y=None):
+        super().__init__(message_class=message_class, show_item_dialog_class=show_item_dialog_class)
+        self.x = x
+        self.y = y
+
+
     def setup(self,):
         super().setup()
         # プレイヤーがいないとダメ
         self.player = self.canvas.object_layer.create_material(
             material_cls=self.canvas.manager.player,
-            name='あなた', kind=const.PLAYER, die=register.functions['roguelike.object.player_die']
+            name='あなた', kind=const.PLAYER, die=register.functions['roguelike.object.player_die'],
+            x=self.x, y=self.y
         )
         self.canvas.move_camera(material=self.player)  # 主人公位置に合わせて表示部分を動かす
 

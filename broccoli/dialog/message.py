@@ -4,6 +4,7 @@
 ログ表示でメッセージを確認するためのダイアログを提供しています。
 
 """
+from collections import deque
 import tkinter as tk
 from broccoli.dialog.base import Dialog
 from broccoli.conf import settings
@@ -14,7 +15,7 @@ class BaseMessageDialog(Dialog):
 
     def __init__(self, parent, canvas):
         super().__init__(parent=parent, canvas=canvas)
-        self.messages = []
+        self.messages = deque()
 
 
 class ActiveMessageDialog(BaseMessageDialog):
@@ -82,7 +83,7 @@ class ActiveMessageDialog(BaseMessageDialog):
         """次のメッセージを表示する。"""
         try:
             self.widget.delete('text')
-            message = self.messages.pop()
+            message = self.messages.popleft()
         except IndexError:
             self.destroy()
         else:
@@ -166,7 +167,7 @@ class LogAndActiveMessageDialog(LogMessageDialog):
 
     def __init__(self, parent, canvas):
         super().__init__(parent, canvas)
-        self.active_messages = []
+        self.active_messages = deque()
         self.active_widget = None
 
     def add(self, message):
@@ -205,7 +206,7 @@ class LogAndActiveMessageDialog(LogMessageDialog):
         """次のメッセージを表示する。"""
         try:
             self.active_widget.delete('text')
-            message = self.active_messages.pop()
+            message = self.active_messages.popleft()
         except IndexError:
             self.active_destroy()
         else:
