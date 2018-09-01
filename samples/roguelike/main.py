@@ -1,10 +1,10 @@
 from broccoli.manage import SimpleGameManager
-from map import first
+from map import tutorial
 from object import Dog
 
 
 class MyGame(SimpleGameManager):
-    canvas_list = [first]
+    canvas_list = [tutorial]
     player = Dog
 
 

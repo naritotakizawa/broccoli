@@ -23,6 +23,8 @@ class BlownBear(RogueLikeObject):
     hp = max_hp = 30
     power = 10
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'ガオー'
 
 
 @register.object
@@ -32,6 +34,8 @@ class WhiteBear(RogueLikeObject):
     hp = max_hp = 60
     power = 15
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'グォー!'
 
 
 @register.object
@@ -42,7 +46,7 @@ class Sparrow(RogueLikeObject):
     power = 2
     kind = const.ENEMY
     talk = roguelike.simple_talk
-    message = 'チュンチュン、羊です。'
+    message = 'チュンチュン、スズメです。'
 
 
 @register.object
@@ -52,6 +56,8 @@ class NormalBison(RogueLikeObject):
     hp = max_hp = 20
     power = 10
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'ガオー'
 
 
 @register.object
@@ -61,6 +67,8 @@ class Camel(RogueLikeObject):
     hp = max_hp = 17
     power = 7
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'ガオー'
 
 
 @register.object
@@ -71,6 +79,8 @@ class Dog(RogueLikeObject):
     max_hp = 20
     power = 10
     kind = const.ENEMY
+    talk = roguelike.simple_talk
+    message = 'ワンワン!'
 
 
 @register.object
@@ -102,7 +112,7 @@ class MapTip3(RogueLikeObject):
 
 @register.object
 class MapTip4(RogueLikeObject):
-    name = '看板(名前とメッセージ属性を変えるとお話できるよ)'
+    name = '看板'
     image = NormalSplite('img/tipset4.png')
     action = generic.do_nothing
     on_damage = generic.do_nothing
@@ -111,65 +121,87 @@ class MapTip4(RogueLikeObject):
     message = 'かんばんです。'
 
 
-@register.function('roguelike.object.on_damage_kind_sheep', system='roguelike', attr='on_damage', material='object')
-def on_damage_sheep(self, tile, obj):
+@register.function('roguelike.object.tutorial_sheep_on_damage', system='roguelike', attr='on_damage', material='object')
+def tutorial_sheep_on_damage(self, tile, obj):
+    """チュートリアル羊の攻撃を食らった際の処理。
+
+    攻撃するな、話しかけろと伝える。
+    """
     self.system.simple_damage_line(material=self)
     self.hp -= obj.power
 
     if self.hp <= 0:
         self.die(tile, obj)
     else:
-        self.hp -= obj.power
         self.system.add_message('ボクは親切な羊。ちょっとしたインストラクションを君に授けるよ。\nまず、「z」キーでこのメッセージは進めることができる。')
         self.system.add_message('人や動物、もしかしたら植物には、「t」キーで話かけることができるよ。')
         self.system.add_message('次のインストラクションは、「t」で話しかけてから説明するよ。\nもう攻撃しないでね。')
 
 
-@register.function('roguelike.object.talk_kind_sheep', system='roguelike', attr='talk', material='object')
-def talk_kind_sheep1(self, obj):
+@register.function('roguelike.object.tutorial_sheep_talk1', system='roguelike', attr='talk', material='object')
+def tutorial_sheep_talk1(self, obj):
+    """チュートリアル羊、最初の会話。"""
     self.system.add_message('ボクは親切な羊。ちょっとしたインストラクションを君に授けるよ。\nまず、「z」キーでこのメッセージは進めることができる。')
     self.system.add_message('人や動物、もしかしたら植物には、今のように「t」キーで話かけることができるよ。')
     self.system.add_message('「z」キーは攻撃ができるけど、友好的っぽい動物にはしないようにしようね。   ')
-    self.system.add_message('ちなみに、ここまでの会話はログに保存されてるよ。「l」キーで確認ができて、同じキーを押すと閉じる。')
-    self.talk = self.create_method(talk_kind_sheep2)
+    self.system.add_message('ちなみに、ここまでの会話はログに保存されてるよ。\n「l」キーで確認ができて、同じキーを押すと閉じる。')
+    self.talk = self.create_method(tutorial_sheep_talk2)
 
 
-def talk_kind_sheep2(self, obj):
-    self.system.add_message('次は戦闘のインストラクションだよ。敵に向かって、「z」キーを押すだけさ。')
+@register.function('roguelike.object.tutorial_sheep_talk2', system='roguelike', attr='talk', material='object')
+def tutorial_sheep_talk2(self, obj):
+    """チュートリアル羊、2回目の会話。"""
+    self.system.add_message('次は戦闘のインストラクションだよ。\n敵に向かって、「z」キーを押すだけさ。')
     self.system.add_message('悪い羊を召喚するから、そいつを倒してみよう!')
-    self.layer.create_material(material_cls=Sheep, x=2, y=3, name='悪い羊', die=die_sheep)
+    self.layer.create_material(material_cls=Sheep, x=5, y=3, name='悪い羊', die=tutorial_enemy_die)
 
 
-def talk_kind_sheep3(self, obj):
-    self.system.add_message('良い仕事をしたね!戦闘のコツは大体掴んだかな?')
-    self.system.add_message('疲れたと思うから、アイテムを配置するよ。アイテムには、上に乗るだけで取得できる。')
-    self.system.add_message('拾ったアイテムは、「i」キーで使えるよ。アイテムウィンドウを閉じるのも「i」キーさ。')
-    self.canvas.item_layer.create_material(material_cls=HealingHerb, x=2, y=3, use=tutorial_use)
+@register.function('roguelike.object.tutorial_sheep_talk3', system='roguelike', attr='talk', material='object')
+def tutorial_sheep_talk3(self, obj):
+    """チュートリアル羊、3回目の会話。"""
+    self.system.add_message('良い仕事をしたね!\n戦闘のコツは大体掴んだかな?')
+    self.system.add_message('疲れたと思うから、アイテムを配置するよ。\nアイテムには、上に乗るだけで取得できる。')
+    self.system.add_message('拾ったアイテムは、「i」キーで使えるよ。\nアイテムウィンドウを閉じるのも「i」キーさ。')
+    self.system.add_message('選択状態のアイテムは赤く表示されるよ。\n複数のアイテムがあれば、上下キーで他のアイテムを選択でき、「z」で使える。')
+    self.canvas.item_layer.create_material(material_cls=HealingHerb, x=5, y=3, use=tutorial_use)
 
 
-def talk_kind_sheep4(self, obj):
-    self.system.add_message('無事回復できたようだね!これで基本は終わりだよ!')
-    self.system.add_message('マップの上に移動すると、ダンジョンに移動できるようにしたよ。')
-    self.system.add_message('グッドラック!')
+@register.function('roguelike.object.tutorial_sheep_talk4', system='roguelike', attr='talk', material='object')
+def tutorial_sheep_talk4(self, obj):
+    """チュートリアル羊、4回目の会話。"""
+    self.system.add_message('無事回復できたようだね!\nこれでインストラクションは終わりだよ!')
 
 
-def die_sheep(self, tile, obj):
+@register.function('roguelike.object.tutorial_enemy_die', system='roguelike', attr='die', material='object')
+def tutorial_enemy_die(self, tile, obj):
+    """チュートリアルの敵を倒した際の処理。
+
+    死んだ後、チュートリアル羊のtalk属性を次のメッセージに書き換える。
+
+    """
     roguelike.die(self, tile, obj)
     tutorial_sheep = self.layer.get(name='親切な羊')
-    tutorial_sheep.talk = tutorial_sheep.create_method(talk_kind_sheep3)
+    tutorial_sheep.talk = tutorial_sheep.create_method(tutorial_sheep_talk3)
 
 
+@register.function('roguelike.object.tutorial_use', system='roguelike', attr='use', material='item')
 def tutorial_use(self):
+    """チュートリアル薬草を使った際の処理。
+
+    使った後、チュートリアル羊のtalk属性を次のメッセージに。
+
+    """
     roguelike.healing_use(self)
     tutorial_sheep = self.canvas.object_layer.get(name='親切な羊')
-    tutorial_sheep.talk = tutorial_sheep.create_method(talk_kind_sheep4)
+    tutorial_sheep.talk = tutorial_sheep.create_method(tutorial_sheep_talk4)
 
 
 @register.object
 class KindnessSheep(RogueLikeObject):
+    """チュートリアル羊。"""
     name = '親切な羊'
     image = NormalSplite('img/character/sheep/sheep_1.png')
-    hp = max_hp = 15
+    hp = max_hp = 30
     action = generic.do_nothing
-    talk = talk_kind_sheep1
-    on_damage = on_damage_sheep
+    talk = tutorial_sheep_talk1
+    on_damage = tutorial_sheep_on_damage
