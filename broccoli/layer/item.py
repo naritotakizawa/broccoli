@@ -33,7 +33,7 @@ class RandomItemLayer(BaseItemLayer):
 class PythonItemLayer(BaseItemLayer):
     """Pythonコードからアイテムレイヤを作成する。
 
-    item=PythonItemLayer(
+    item_layer=PythonItemLayer(
         item_list=[
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
@@ -42,8 +42,8 @@ class PythonItemLayer(BaseItemLayer):
             [0, 0, 0, 0, 0],
         ],
         context={
-            1: (HealingHerb, {}),
-            2: (HealingHerb, {'direction': 2}),
+            1: [(HealingHerb, {}), (HealingHerb, {})],
+            2: [(HealingHerb, {'direction': 2})],
         },
     ),
     のようにして作成することができます。
@@ -58,11 +58,13 @@ class PythonItemLayer(BaseItemLayer):
         for y, row in enumerate(self.item_list):
             for x, col in enumerate(row):
                 try:
-                    item_cls, kwargs = self.context[col]
+                    items = self.context[col]
                 except KeyError:
                     pass
                 else:
-                    self.create_material(material_cls=item_cls, x=x, y=y, **kwargs)
+                    for item in items:
+                        item_cls, kwargs = item
+                        self.create_material(material_cls=item_cls, x=x, y=y, **kwargs)
 
 
 class JsonItemLayer(BaseItemLayer):

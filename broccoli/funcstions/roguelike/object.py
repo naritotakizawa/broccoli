@@ -71,7 +71,7 @@ def move(self, tile):
     items = self.canvas.item_layer[self.y][self.x]
     if items:
         messages = []
-        for item in items:
+        for item in items[:]:
             item.owner = self
             self.items.append(item)
             item.delete()
