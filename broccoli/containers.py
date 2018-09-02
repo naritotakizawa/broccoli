@@ -11,6 +11,7 @@ class IndexDict(UserDict):
     辞書が順序を保持する、Python3.6から使えます。
     もしかしたらOrderedDictを基にした、下位互換性のあるものに変更するかも。
 
+    # インデックスと、キーでのアクセステスト
     >>> index_dict = IndexDict({'first': 'ファースト', 'second': 'セカンド', 'third': 'サード'})
     >>> index_dict
     {'first': 'ファースト', 'second': 'セカンド', 'third': 'サード'}
@@ -29,6 +30,7 @@ class IndexDict(UserDict):
     ...
     KeyError: 'nothing_key'
 
+    # あるキーの値を書き換えるテスト
     >>> index_dict['second'] = 'two'
     >>> index_dict['second']
     'two'
@@ -41,6 +43,7 @@ class IndexDict(UserDict):
     >>> index_dict.get_index_from_key('third')
     2
 
+    # インデックスとキーでの削除テスト
     >>> del index_dict[0]
     >>> index_dict
     {'second': 'two', 'third': 'サード'}
@@ -48,6 +51,7 @@ class IndexDict(UserDict):
     >>> index_dict
     {'third': 'サード'}
 
+    # 新しいキーで値を追加した場合のテスト
     >>> index_dict['four'] = 'フォー'
     >>> index_dict
     {'third': 'サード', 'four': 'フォー'}
@@ -57,6 +61,17 @@ class IndexDict(UserDict):
     'four'
     >>> index_dict.get_index_from_key('four')
     1
+
+    # あるインデックスの値を書き換えるテスト
+    >>> index_dict[0] = 'ファースト'
+    >>> index_dict
+    {'third': 'ファースト', 'four': 'フォー'}
+    >>> index_dict[0]
+    'ファースト'
+    >>> index_dict.get_key_from_index(0)
+    'third'
+    >>> index_dict.get_index_from_key('third')
+    0
 
     """
 
@@ -69,14 +84,13 @@ class IndexDict(UserDict):
 
     def __setitem__(self, key, value):
         if isinstance(key, int):
-            raise TypeError('インデックスを指定した代入はできません。')
-        super().__setitem__(key, value)
+            key = self.get_key_from_index(key)
+        self.data[key] = value
 
     def __delitem__(self, key):
         if isinstance(key, int):
-            dict_keys = list(self.data.keys())
-            key = dict_keys[key]
-        super().__delitem__(key)
+            key = self.get_key_from_index(key)
+        del self.data[key]
 
     def get_key_from_index(self, index):
         """その位置にあるkeyを返す。"""
