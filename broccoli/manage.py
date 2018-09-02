@@ -4,7 +4,7 @@
 
 """
 import tkinter as tk
-from broccoli import const
+from broccoli.containers import IndexDict
 from broccoli.conf import settings
 
 
@@ -16,7 +16,7 @@ class SimpleGameManager:
 
     """
 
-    canvas_list = []
+    canvas_list = IndexDict({})
     player = None
 
     # ゲームオーバーメッセージや、マップ名の表示に関する設定
@@ -39,23 +39,30 @@ class SimpleGameManager:
         self.root.minsize(settings.GAME_WIDTH, settings.GAME_HEIGHT)
         self.root.maxsize(settings.GAME_WIDTH, settings.GAME_HEIGHT)
 
-    def next_canvas(self, next_canvas_index=None):
+    def jump(self, index=None):
         """次のマップを表示する"""
-        if next_canvas_index is None:
-            self.current_canvas_index += 1
+        if index is None:
+            canvas_index = self.current_canvas_index + 1
+            canvas_name = self.canvas_list.get_key_from_index(canvas_index)
         else:
-            self.current_canvas_index = next_canvas_index
+            if isinstance(index, int):
+                canvas_index = index
+                canvas_name = self.canvas_list.get_key_from_index(canvas_index)
+            else:
+                canvas_name = index
+                canvas_index = self.canvas_list.get_index_from_key(canvas_name)
 
         if self.current_canvas is not None:
             self.current_canvas.destroy()
 
-        canvas = self.canvas_list[self.current_canvas_index](self)
-        self.current_canvas = canvas
+        self.current_canvas_index = canvas_index
+        canvas = self.canvas_list[canvas_name]
+        self.current_canvas = canvas(manager=self, name=canvas_name)
         self.current_canvas.pack()
         self.current_canvas.start()
 
     def start(self):
         """ゲームの開始。インスタンス化後、このメソッドを呼んでください。"""
         self.setup_game()
-        self.next_canvas(next_canvas_index=0)
+        self.jump(index=0)
         self.root.mainloop()

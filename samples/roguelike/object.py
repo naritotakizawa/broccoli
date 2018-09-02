@@ -126,50 +126,62 @@ def tutorial_sheep_on_damage(self, tile, obj):
     """チュートリアル羊の攻撃を食らった際の処理。
 
     攻撃するな、話しかけろと伝える。
+
     """
+    # プレイヤーしか話しかかえてくるオブジェクトはいないので、必然的にobj引数はプレイヤー。
+    flag = obj.vars.get('tutorial', 0)
+
     self.system.simple_damage_line(material=self)
     self.hp -= obj.power
 
     if self.hp <= 0:
         self.die(tile, obj)
-    else:
+    elif flag == 0:
         self.system.add_message('ボクは親切な羊。ちょっとしたインストラクションを君に授けるよ。\nまず、「z」キーでこのメッセージは進めることができる。')
         self.system.add_message('人や動物、もしかしたら植物には、「t」キーで話かけることができるよ。')
         self.system.add_message('次のインストラクションは、「t」で話しかけてから説明するよ。\nもう攻撃しないでね。')
 
 
 @register.function('roguelike.object.tutorial_sheep_talk1', system='roguelike', attr='talk', material='object')
-def tutorial_sheep_talk1(self, obj):
-    """チュートリアル羊、最初の会話。"""
-    self.system.add_message('ボクは親切な羊。ちょっとしたインストラクションを君に授けるよ。\nまず、「z」キーでこのメッセージは進めることができる。')
-    self.system.add_message('人や動物、もしかしたら植物には、今のように「t」キーで話かけることができるよ。')
-    self.system.add_message('「z」キーは攻撃ができるけど、友好的っぽい動物にはしないようにしようね。   ')
-    self.system.add_message('ちなみに、ここまでの会話はログに保存されてるよ。\n「l」キーで確認ができて、同じキーを押すと閉じる。')
-    self.talk = self.create_method(tutorial_sheep_talk2)
+def tutorial_sheep_talk(self, obj):
+    """チュートリアル羊の会話。"""
+    # プレイヤーしか話しかかえてくるオブジェクトはいないので、必然的にobj引数はプレイヤー。
+    flag = obj.vars.get('tutorial', 0)
 
+    # インストラクション1
+    if flag == 0:
+        self.system.add_message('ボクは親切な羊。ちょっとしたインストラクションを君に授けるよ。\nまず、「z」キーでこのメッセージは進めることができる。')
+        self.system.add_message('人や動物、もしかしたら植物には、今のように「t」キーで話かけることができるよ。')
+        self.system.add_message('「z」キーは攻撃ができるけど、友好的っぽい動物にはしないようにしようね。   ')
+        self.system.add_message('ちなみに、ここまでの会話はログに保存されてるよ。\n「l」キーで確認ができて、同じキーを押すと閉じる。')
+        obj.vars['tutorial'] = 1
 
-@register.function('roguelike.object.tutorial_sheep_talk2', system='roguelike', attr='talk', material='object')
-def tutorial_sheep_talk2(self, obj):
-    """チュートリアル羊、2回目の会話。"""
-    self.system.add_message('次は戦闘のインストラクションだよ。\n敵に向かって、「z」キーを押すだけさ。')
-    self.system.add_message('悪い羊を召喚するから、そいつを倒してみよう!')
-    self.layer.create_material(material_cls=Sheep, x=5, y=3, name='悪い羊', die=tutorial_enemy_die)
+    # インストラクション2
+    elif flag == 1:
+        self.system.add_message('次は戦闘のインストラクションだよ。\n敵に向かって、「z」キーを押すだけさ。')
+        self.system.add_message('悪い羊を召喚するから、そいつを倒してみよう!')
+        self.layer.create_material(material_cls=Sheep, x=5, y=3, name='悪い羊', die=tutorial_enemy_die)
+        obj.vars['tutorial'] = 2
 
+    # インストラクション3
+    elif flag == 2:
+        self.system.add_message('話しかけている間は、ターン経過しないよ。\n早く悪い羊を倒すんだ。')
 
-@register.function('roguelike.object.tutorial_sheep_talk3', system='roguelike', attr='talk', material='object')
-def tutorial_sheep_talk3(self, obj):
-    """チュートリアル羊、3回目の会話。"""
-    self.system.add_message('良い仕事をしたね!\n戦闘のコツは大体掴んだかな?')
-    self.system.add_message('疲れたと思うから、アイテムを配置するよ。\nアイテムには、上に乗るだけで取得できる。')
-    self.system.add_message('拾ったアイテムは、「i」キーで使えるよ。\nアイテムウィンドウを閉じるのも「i」キーさ。')
-    self.system.add_message('選択状態のアイテムは赤く表示されるよ。\n複数のアイテムがあれば、上下キーで他のアイテムを選択でき、「z」で使える。')
-    self.canvas.item_layer.create_material(material_cls=HealingHerb, x=5, y=3, use=tutorial_use)
+    # インストラクション4
+    elif flag == 3:
+        self.system.add_message('良い仕事をしたね!\n戦闘のコツは大体掴んだかな?')
+        self.system.add_message('疲れたと思うから、アイテムを配置するよ。\nアイテムには、上に乗るだけで取得できる。')
+        self.system.add_message('拾ったアイテムは、「i」キーで使えるよ。\nアイテムウィンドウを閉じるのも「i」キーさ。')
+        self.system.add_message('選択状態のアイテムは赤く表示されるよ。\n複数のアイテムがあれば、上下キーで他のアイテムを選択でき、「z」で使える。')
+        self.canvas.item_layer.create_material(material_cls=HealingHerb, x=5, y=3, use=tutorial_use)
+        obj.vars['tutorial'] = 4
 
+    elif flag == 4:
+        self.system.add_message('拾ったアイテムは、「i」キーで使えるよ。\nアイテムウィンドウを閉じるのも「i」キーさ。')
+        self.system.add_message('選択状態のアイテムは赤く表示されるよ。\n複数のアイテムがあれば、上下キーで他のアイテムを選択でき、「z」で使える。')
 
-@register.function('roguelike.object.tutorial_sheep_talk4', system='roguelike', attr='talk', material='object')
-def tutorial_sheep_talk4(self, obj):
-    """チュートリアル羊、4回目の会話。"""
-    self.system.add_message('無事回復できたようだね!\nこれでインストラクションは終わりだよ!')
+    elif flag == 5:
+        self.system.add_message('ちゃんと使えたみたいだね!')
 
 
 @register.function('roguelike.object.tutorial_enemy_die', system='roguelike', attr='die', material='object')
@@ -180,8 +192,8 @@ def tutorial_enemy_die(self, tile, obj):
 
     """
     roguelike.die(self, tile, obj)
-    tutorial_sheep = self.layer.get(name='親切な羊')
-    tutorial_sheep.talk = tutorial_sheep.create_method(tutorial_sheep_talk3)
+    player = self.layer.get(name='あなた')
+    player.vars['tutorial'] = 3
 
 
 @register.function('roguelike.object.tutorial_use', system='roguelike', attr='use', material='item')
@@ -192,8 +204,8 @@ def tutorial_use(self):
 
     """
     roguelike.healing_use(self)
-    tutorial_sheep = self.canvas.object_layer.get(name='親切な羊')
-    tutorial_sheep.talk = tutorial_sheep.create_method(tutorial_sheep_talk4)
+    player = self.system.player
+    player.vars['tutorial'] = 5
 
 
 @register.object
@@ -203,5 +215,5 @@ class KindnessSheep(RogueLikeObject):
     image = NormalSplite('img/character/sheep/sheep_1.png')
     hp = max_hp = 30
     action = generic.do_nothing
-    talk = tutorial_sheep_talk1
+    talk = tutorial_sheep_talk
     on_damage = tutorial_sheep_on_damage

@@ -114,9 +114,9 @@ class MaterialListFrame(tk.Toplevel):
                 label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
                 ttk.Button(tile_frame, text='振る舞いの変更', command=method_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
-            # 属性がリストの場合(未実装)
-            elif isinstance(attr_value, list):
-                label = ttk.Label(tile_frame, text=','.join(attr_value))
+            # 属性がリストや辞書の場合(未実装)
+            elif isinstance(attr_value, (list, dict)):
+                label = ttk.Label(tile_frame, text=attr_value)
                 label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
             # 属性が文字列の場合
@@ -155,8 +155,8 @@ class MaterialListFrame(tk.Toplevel):
                 ttk.Button(obj_frame, text='振る舞いの変更', command=method_command(self.obj, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
             # 属性がリストの場合(未実装)
-            elif isinstance(attr_value, list):
-                label = ttk.Label(obj_frame, text=','.join(attr_value))
+            elif isinstance(attr_value, (list, dict)):
+                label = ttk.Label(obj_frame, text=attr_value)
                 label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
             # 属性が文字列の場合
@@ -196,8 +196,8 @@ class MaterialListFrame(tk.Toplevel):
                     ttk.Button(item_frame, text='振る舞いの変更', command=method_command(item, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
                 # 属性がリストの場合(未実装)
-                elif isinstance(attr_value, list):
-                    label = ttk.Label(item_frame, text=','.join(attr_value))
+                elif isinstance(attr_value, (list, dict)):
+                    label = ttk.Label(item_frame, text=attr_value)
                     label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
                 # 属性が文字列の場合

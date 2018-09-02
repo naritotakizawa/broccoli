@@ -19,14 +19,18 @@ from broccoli import const
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
+    name = None
+    vars = {}  # フラグ等の値を格納する辞書として使えます。jsonでの読み込み・保存に対応している辞書です。
+
     attrs = []  # このマテリアルが持つ、固有の属性を書きます。
     func_attrs = []  # マテリアルの固有属性のうち、関数となるものを書きます。
 
-    def __init__(self, direction=0, diff=0, name=None, **kwargs):
+    def __init__(self, direction=0, diff=0, name=None, vars=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
         - マテリアルの名前
+        - マテリアルの変数辞書(vars)
         - マテリアルの向き
         - マテリアルの差分
         - レイヤ内の位置にあたるx, y座標
@@ -51,6 +55,11 @@ class BaseMaterial:
             self.name = cls.name
         else:
             self.name = name
+
+        if vars is None:
+            self.vars = cls.vars
+        else:
+            self.vars = vars
 
         # 向きに関する属性
         self.direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
@@ -158,6 +167,7 @@ class BaseMaterial:
             'name': self.name,
             'direction': self.direction,
             'diff': self.diff,
+            'vars': self.vars,
         }
         for attr_name in self.attrs:
             value = getattr(self, attr_name)
@@ -177,6 +187,7 @@ class BaseMaterial:
         """
         result = {
             'name': cls.name,
+            'vars': cls.vars,
         }
         for attr_name in cls.attrs:
             value = getattr(cls, attr_name)
@@ -200,6 +211,7 @@ class BaseMaterial:
             'name': self.name,
             'direction': self.direction,
             'diff': self.diff,
+            'vars': self.vars,
         }
         for attr_name in self.attrs:
             value = getattr(self, attr_name)
