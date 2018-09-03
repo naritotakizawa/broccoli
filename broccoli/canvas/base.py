@@ -13,9 +13,10 @@ startメソッドを呼び出すことで、そのマップ又はゲームが動
 tk.Canvasのサブクラスなため、実際の画面への描画や、キャンバス情報の取得、アニメーションといった処理も担当します。
 
 """
+import json
 import tkinter as tk
 from tkinter import filedialog
-from broccoli import parse_xy
+from broccoli import parse_xy, serializers
 from broccoli.conf import settings
 from broccoli.layer import EmptyObjectLayer, EmptyItemLayer
 from broccoli.system import BaseSystem
@@ -140,15 +141,18 @@ class GameCanvas2D(tk.Canvas):
         """現在のマップデータを、jsonで出力する。"""
         file_path = filedialog.asksaveasfilename(title='背景の保存先')
         if file_path:
-            self.tile_layer.to_json(file_path)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.tile_layer, file, cls=serializers.JsonEncoder, indent=4)
 
         file_path = filedialog.asksaveasfilename(title='オブジェクトの保存先')
         if file_path:
-            self.object_layer.to_json(file_path)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.object_layer, file, cls=serializers.JsonEncoder, indent=4)
 
         file_path = filedialog.asksaveasfilename(title='アイテムの保存先')
         if file_path:
-            self.item_layer.to_json(file_path)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.item_layer, file, cls=serializers.JsonEncoder, indent=4)
 
     def abs_xy_to_layer_xy(self, abs_x, abs_y):
         """絶対座標をレイヤ内のx,yに変換する。"""

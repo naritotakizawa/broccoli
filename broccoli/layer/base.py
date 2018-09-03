@@ -5,7 +5,6 @@
 それらのレイヤーを作成するためのクラスを提供しています。
 
 """
-import json
 import random
 
 
@@ -133,21 +132,6 @@ class BaseTileLayer(BaseLayer):
             if tile.is_public():
                 yield x, y
 
-    def to_json(self, path):
-        """背景レイヤをjsonとして出力する。"""
-        data = {
-            'x_length': self.x_length,
-            'y_length': self.y_length,
-            'layer': [[None for _ in range(self.x_length)] for _ in range(self.y_length)],
-        }
-        for x, y, tile in self.all():
-            data['layer'][y][x] = {
-                'class_name': tile.__class__.__name__,
-                'kwargs': tile.to_dict(),
-            }
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(data, file)
-
     def create_material(self, material_cls, x=None, y=None, **kwargs):
         material = super().create_material(material_cls, x=x, y=y, **kwargs)
         self.canvas.lower(material.id)  # 背景は一番下に配置する
@@ -194,23 +178,6 @@ class BaseObjectLayer(BaseLayer):
         for x, y, tile in self.tile_layer.all():
             if tile.is_public(obj=material) and self[y][x] is None:
                 yield x, y
-
-    def to_json(self, path):
-        """オブジェクトレイヤーをJSON出力する"""
-        data = {
-            'layer': [[None for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
-        }
-        for x, y, obj in self.all():
-            if obj is None:
-                data['layer'][y][x] = None
-            else:
-                data['layer'][y][x] = {
-                    'class_name': obj.__class__.__name__,
-                    'kwargs': obj.to_dict(),
-                }
-
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(data, file)
 
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
@@ -262,23 +229,6 @@ class BaseItemLayer(BaseLayer):
         for x, y, tile in self.tile_layer.all():
             if tile.is_public():
                 yield x, y
-
-    def to_json(self, path):
-        """アイテムレイヤーをJSON出力する。"""
-        data = {
-            'layer': [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
-        }
-        for x, y, items in self.all():
-            if items:
-                data['layer'][y][x] = [
-                    {'class_name': item.__class__.__name__, 'kwargs': item.to_dict()} for item in items
-                ]
-
-            else:
-                data['layer'][y][x] = []
-
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(data, file)
 
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
