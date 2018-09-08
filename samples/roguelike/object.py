@@ -170,9 +170,10 @@ def tutorial_sheep_talk(self, obj):
     # インストラクション4
     elif flag == 3:
         self.system.add_message('良い仕事をしたね!\n戦闘のコツは大体掴んだかな?')
-        self.system.add_message('疲れたと思うから、アイテムを配置するよ。\nアイテムには、上に乗るだけで取得できる。')
+        self.system.add_message('疲れたと思うから、アイテムを配置するよ。\nアイテムには、上に乗るだけで全て取得できる。')
         self.system.add_message('拾ったアイテムは、「i」キーで使えるよ。\nアイテムウィンドウを閉じるのも「i」キーさ。')
         self.system.add_message('選択状態のアイテムは赤く表示されるよ。\n複数のアイテムがあれば、上下キーで他のアイテムを選択でき、「z」で使える。')
+        self.canvas.item_layer.create_material(material_cls=HealingHerb, x=5, y=3, use=tutorial_use)
         self.canvas.item_layer.create_material(material_cls=HealingHerb, x=5, y=3, use=tutorial_use)
         obj.vars['tutorial'] = 4
 
