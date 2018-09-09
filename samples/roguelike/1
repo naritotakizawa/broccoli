@@ -1,0 +1,59 @@
+{
+    "kind": "Layer",
+    "x_length": 2,
+    "y_length": 2,
+    "layer": [
+        [
+            {
+                "class_name": "GrassTile",
+                "kwargs": {
+                    "name": "\u8349\u539f",
+                    "direction": 0,
+                    "diff": 0,
+                    "vars": {},
+                    "is_public": "generic.return_true",
+                    "on_self": "generic.do_nothing"
+                },
+                "kind": "Tile"
+            },
+            {
+                "class_name": "GrassTile",
+                "kwargs": {
+                    "name": "\u8349\u539f",
+                    "direction": 0,
+                    "diff": 0,
+                    "vars": {},
+                    "is_public": "generic.return_true",
+                    "on_self": "generic.do_nothing"
+                },
+                "kind": "Tile"
+            }
+        ],
+        [
+            {
+                "class_name": "GrassTile",
+                "kwargs": {
+                    "name": "\u8349\u539f",
+                    "direction": 0,
+                    "diff": 0,
+                    "vars": {},
+                    "is_public": "generic.return_true",
+                    "on_self": "generic.do_nothing"
+                },
+                "kind": "Tile"
+            },
+            {
+                "class_name": "GrassTile",
+                "kwargs": {
+                    "name": "\u8349\u539f",
+                    "direction": 0,
+                    "diff": 0,
+                    "vars": {},
+                    "is_public": "generic.return_true",
+                    "on_self": "generic.do_nothing"
+                },
+                "kind": "Tile"
+            }
+        ]
+    ]
+}

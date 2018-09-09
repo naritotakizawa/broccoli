@@ -66,18 +66,18 @@ class BaseMaterial:
         self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
 
         # マテリアルインスタンスの属性を設定
-        # kwargsにあればそれを、そうでなければクラス属性を設定
-        # 更に関数ならば、メソッドとして登録
         for attr_name in cls.attrs:
+            # kwargsにあればそれを、そうでなければクラス属性を設定
             if attr_name in kwargs:
                 value = kwargs[attr_name]
             else:
                 value = getattr(cls, attr_name)
 
+            # 関数ならば、メソッドとして登録。
             if attr_name in self.func_attrs:
                 value = self.create_method(value)
 
-            # クラス属性の空リストや辞書等を使った場合は、他と共有されるのでcopy
+            # クラス属性でリストや辞書等を使った場合は、他と共有されるのでcopy
             # ミュータブルなオブジェクト全てに言えるので、いずれ汎用的に。
             if isinstance(value, (list, dict)):
                 value = value.copy()
@@ -155,27 +155,6 @@ class BaseMaterial:
         sorted_materials = sorted(materials, key=_nearest)
         return sorted_materials[0]
 
-    def to_dict(self):
-        """マテリアルインスタンスの属性を、JSON化できる辞書として返す。
-
-        get_instance_attrsと殆ど同じですが、インスタンスの属性に関数がある場合は、
-        関数オブジェクトではなく関数の登録名(register.functionsデコレータの第一引数)を設定します。
-        主に、JSONシリアライズするのに使います。
-
-        """
-        result = {
-            'name': self.name,
-            'direction': self.direction,
-            'diff': self.diff,
-            'vars': self.vars,
-        }
-        for attr_name in self.attrs:
-            value = getattr(self, attr_name)
-            if attr_name in self.func_attrs:
-                value = value.name  # 関数のname属性に、registerに登録する名前が入っている
-            result[attr_name] = value
-        return result
-
     @classmethod
     def get_class_attrs(cls):
         """クラスの属性を辞書として返します。
@@ -197,7 +176,7 @@ class BaseMaterial:
     def get_instance_attrs(self):
         """マテリアルインスタンスの属性を返します。
 
-        to_dictと違い、関数オブジェクトもそのまま設定されます。
+        関数オブジェクトもそのまま設定されます。
         これはインスタンス化の引数にそのまま使える辞書で、マテリアルのコピーに使えます。
 
         cls = type(material)

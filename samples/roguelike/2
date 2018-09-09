@@ -1,0 +1,65 @@
+{
+    "kind": "Layer",
+    "layer": [
+        [
+            {
+                "class_name": "Sheep",
+                "kwargs": {
+                    "name": "\u7f8a",
+                    "direction": 0,
+                    "diff": 2,
+                    "vars": {},
+                    "see_x": 2,
+                    "see_y": 2,
+                    "kind": 1,
+                    "hp": 15,
+                    "max_hp": 15,
+                    "power": 5,
+                    "items": [
+                        {
+                            "class_name": "HealingHerb",
+                            "kwargs": {
+                                "name": "\u85ac\u8349",
+                                "direction": 0,
+                                "diff": 0,
+                                "vars": {},
+                                "power": 10,
+                                "use": "roguelike.item.healing_use"
+                            },
+                            "kind": "Item"
+                        },
+                        {
+                            "class_name": "HealingHerb",
+                            "kwargs": {
+                                "name": "\u30b9\u30fc\u30d1\u30fc\u85ac\u8349",
+                                "direction": 0,
+                                "diff": 0,
+                                "vars": {},
+                                "power": 10,
+                                "use": "roguelike.item.healing_use"
+                            },
+                            "kind": "Item"
+                        }
+                    ],
+                    "action": "roguelike.object.action",
+                    "move": "roguelike.object.move",
+                    "attack": "roguelike.object.attack",
+                    "random_walk": "roguelike.object.random_walk",
+                    "is_enemy": "roguelike.object.is_enemy",
+                    "on_damage": "roguelike.object.on_damage",
+                    "die": "roguelike.object.die",
+                    "towards": "roguelike.object.towards",
+                    "get_enemies": "roguelike.object.get_enemies",
+                    "talk": "roguelike.object.simple_talk",
+                    "message": "\u30e1\u30a7\u30fc!"
+                },
+                "kind": "Object"
+            },
+            null
+        ],
+        [
+            null,
+            null
+        ]
+    ]
+}

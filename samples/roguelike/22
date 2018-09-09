@@ -1,0 +1,54 @@
+{
+    "kind": "Layer",
+    "layer": [
+        [
+            {
+                "class_name": "Dog",
+                "kwargs": {
+                    "name": "\u72ac",
+                    "direction": 0,
+                    "diff": 1,
+                    "vars": {},
+                    "see_x": 2,
+                    "see_y": 2,
+                    "kind": 1,
+                    "hp": 20,
+                    "max_hp": 20,
+                    "power": 10,
+                    "items": [],
+                    "action": "roguelike.object.action",
+                    "move": "roguelike.object.move",
+                    "attack": "roguelike.object.attack",
+                    "random_walk": "roguelike.object.random_walk",
+                    "is_enemy": "roguelike.object.is_enemy",
+                    "on_damage": "roguelike.object.on_damage",
+                    "die": "roguelike.object.die",
+                    "towards": "roguelike.object.towards",
+                    "get_enemies": "roguelike.object.get_enemies",
+                    "talk": "roguelike.object.simple_talk",
+                    "message": "\u30ef\u30f3\u30ef\u30f3!",
+                    "a": {
+                        "data": {
+                            "class_name": "HealingHerb",
+                            "kwargs": {
+                                "name": "\u85ac\u8349",
+                                "direction": 0,
+                                "diff": 0,
+                                "vars": {},
+                                "power": 100,
+                                "use": "roguelike.item.healing_use"
+                            },
+                            "kind": "Item"
+                        }
+                    }
+                },
+                "kind": "Object"
+            },
+            null
+        ],
+        [
+            null,
+            null
+        ]
+    ]
+}

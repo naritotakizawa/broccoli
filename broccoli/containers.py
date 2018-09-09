@@ -115,3 +115,4 @@ class MaterialList(list):
 
 class NumberList(list):
     """数値だけを格納するリスト"""
+    pass
