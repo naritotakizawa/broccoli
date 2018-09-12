@@ -98,21 +98,6 @@ class IndexDict(UserDict):
         return dict_keys[index]
 
     def get_index_from_key(self, key):
+        """そのキーのインデックスを返す。"""
         dict_keys = list(self.data.keys())
         return dict_keys.index(key)
-
-
-class MaterialList(list):
-    """マテリアルだけを格納するリスト。
-
-    今のところ、マテリアル以外のデータ型も格納はできます。
-    しかし、このクラスを使っていることでリスト内のデータがマテリアルであると推測できます。
-
-    """
-    pass
-
-
-
-class NumberList(list):
-    """数値だけを格納するリスト"""
-    pass
