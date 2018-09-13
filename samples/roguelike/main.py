@@ -9,7 +9,7 @@ class MyGame(SimpleGameManager):
     canvas_list = IndexDict({
         'チュートリアル': tutorial,
     })
-    player = Dog
+    player = (Dog, {'name': 'あなた'})
 
 
 if __name__ == '__main__':

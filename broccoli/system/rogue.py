@@ -220,11 +220,14 @@ class RogueWithPlayer(RogueLikeSystem):
 
     def setup(self,):
         super().setup()
+        player_cls, kwargs = self.canvas.manager.player
+        kwargs.update({
+            'kind': const.PLAYER,
+            'die': register.functions['roguelike.object.player_die'],
+        })
         # プレイヤーがいないとダメ
         self.player = self.canvas.object_layer.create_material(
-            material_cls=self.canvas.manager.player,
-            name='あなた', kind=const.PLAYER, die=register.functions['roguelike.object.player_die'],
-            x=self.x, y=self.y
+            material_cls=player_cls, x=self.x, y=self.y, **kwargs
         )
         self.canvas.move_camera(material=self.player)  # 主人公位置に合わせて表示部分を動かす
 
