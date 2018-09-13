@@ -197,24 +197,6 @@ class BaseMaterial:
             result[attr_name] = value
         return result
 
-    def copy(self):
-        """マテリアルのコピーを返します。
-
-        cls = type(material)
-        kwargs = material.get_instance_attrs()
-        create_material(material_cls=cls, **kwargs)
-
-        を
-
-        create_material(material_cls=material.copy())
-
-        と書くことができます。
-
-        """
-        cls = type(self)
-        kwargs = self.get_instance_attrs()
-        return cls(**kwargs)
-
     def create_method(self, func):
         """マテリアルのメソッドとして関数を登録します。"""
 
