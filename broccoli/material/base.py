@@ -25,7 +25,7 @@ class BaseMaterial:
     attrs = []  # このマテリアルが持つ、固有の属性を書きます。
     func_attrs = []  # マテリアルの固有属性のうち、関数となるものを書きます。
 
-    def __init__(self, x, y, canvas, system, layer, direction=0, diff=0, name=None, vars=None, **kwargs):
+    def __init__(self, x=None, y=None, canvas=None, system=None, layer=None, direction=0, diff=0, name=None, vars=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
@@ -43,10 +43,6 @@ class BaseMaterial:
         更に、マテリアルの種類や具象クラスによっては固有の属性を持ちます。
 
         基本的に、レイヤクラスのcreate_materialを使ってマテリアルを生成することになります。
-
-        x, y, canvas, layer, system, id属性はインスタンス化時には設定されませんが、
-        インスタンス化後、順番に設定されていきます。
-        そのため、インスタンス化時の引数に渡しても意味はありません。
 
         """
         cls = type(self)
@@ -176,14 +172,7 @@ class BaseMaterial:
     def get_instance_attrs(self):
         """マテリアルインスタンスの属性を返します。
 
-        関数オブジェクトもそのまま設定されます。
-        これはインスタンス化の引数にそのまま使える辞書で、マテリアルのコピーに使えます。
-
-        cls = type(material)
-        kwargs = material.get_instance_attrs()
-        create_material(material_cls=cls, **kwargs)
-
-        とすると、そのマテリアルのコピーを作成できます。
+        マテリアルのコピーを作りたい場合は、dumpを利用してください。
 
         """
         result = {
@@ -196,6 +185,34 @@ class BaseMaterial:
             value = getattr(self, attr_name)
             result[attr_name] = value
         return result
+
+    def dump(self):
+        """cls, kwargsの形式でマテリアルを返す。
+
+        cls, kwargs = material.dump()
+        layer.create_material(material_cls=cls, **kwargs)
+
+        のようにするとマテリアルのコピーが作れます。
+
+        マテリアルのある属性がリストや辞書だった場合で、
+        内部にマテリアルを格納していた場合は(cls, kwargs)形式に変換されていきます。
+
+        """
+        cls = type(self)
+        kwargs = self.get_instance_attrs()
+        for name, value in kwargs.items():
+            # リストだった場合、内部にマテリアルがあれば(cls, kwargs)形式に
+            if isinstance(value, (list, tuple)):
+                for i, data in enumerate(value):
+                    if isinstance(data, BaseMaterial):
+                        value[i] = data.dump()
+
+            # 辞書だった場合、内部にマテリアルがあれば(cls, kwargs)形式に
+            elif isinstance(value, dict):
+                for attr_name, attr_value in value.items():
+                    if isinstance(attr_value, BaseMaterial):
+                        value[name] = attr_name.dump()
+        return cls, kwargs
 
     def create_method(self, func):
         """マテリアルのメソッドとして関数を登録します。"""
