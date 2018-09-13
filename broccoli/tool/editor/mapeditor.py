@@ -192,17 +192,20 @@ class MapEditor(ttk.Frame):
         if isinstance(self.select, BaseTile):
             tile.delete()
             self.canvas_frame.canvas.tile_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=self.select.__class__, x=x, y=y,
+                **self.select.get_instance_attrs(),
             )
         elif isinstance(self.select, BaseObject):
             if obj is not None:
                 obj.delete()
             self.canvas_frame.canvas.object_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=self.select.__class__, x=x, y=y,
+                **self.select.get_instance_attrs(),
             )
         elif isinstance(self.select, BaseItem):
             self.canvas_frame.canvas.item_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=self.select.__class__, x=x, y=y,
+                **self.select.get_instance_attrs(),
             )
 
         else:
