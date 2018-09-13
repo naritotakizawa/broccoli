@@ -41,9 +41,5 @@ class RogueLikeObject(BaseObject):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         # items内のアイテムを、実際にインスタンス化する。
-        try:
-            self.items = [cls(owner=self, **kwargs) for cls, kwargs in self.items]
-        except TypeError:
-            pass
+        self.items = [cls(owner=self, system=self.system, **item_kwargs) for cls, item_kwargs in self.items]
