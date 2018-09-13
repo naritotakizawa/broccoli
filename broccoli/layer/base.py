@@ -74,10 +74,7 @@ class BaseLayer:
             'x': x,
             'y': y,
         })
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            material = material_cls
+        material = material_cls(**kwargs)
 
         id = self.canvas.create_image(
             x*settings.CELL_WIDTH,
