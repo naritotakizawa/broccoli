@@ -25,7 +25,7 @@ class BaseMaterial:
     attrs = []  # このマテリアルが持つ、固有の属性を書きます。
     func_attrs = []  # マテリアルの固有属性のうち、関数となるものを書きます。
 
-    def __init__(self, direction=0, diff=0, name=None, vars=None, **kwargs):
+    def __init__(self, x, y, canvas, system, layer, direction=0, diff=0, name=None, vars=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
@@ -50,6 +50,13 @@ class BaseMaterial:
 
         """
         cls = type(self)
+
+        self.x = x
+        self.y = y
+        self.canvas = canvas
+        self.system = system
+        self.layer = layer
+        self.id = None
 
         if name is None:
             self.name = cls.name
@@ -83,13 +90,6 @@ class BaseMaterial:
                 value = value.copy()
 
             setattr(self, attr_name, value)
-
-        self.y = None
-        self.x = None
-        self.canvas = None
-        self.system = None
-        self.id = None
-        self.layer = None
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)

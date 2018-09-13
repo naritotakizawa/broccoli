@@ -214,9 +214,9 @@ class RogueWithPlayer(RogueLikeSystem):
 
     def __init__(self, message_class=LogAndActiveMessageDialog, show_item_dialog_class=ListDialog, x=None, y=None):
         super().__init__(message_class=message_class, show_item_dialog_class=show_item_dialog_class)
+        # プレイヤーの初期座標
         self.x = x
         self.y = y
-
 
     def setup(self,):
         super().setup()
