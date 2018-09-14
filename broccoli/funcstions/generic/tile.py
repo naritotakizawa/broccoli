@@ -1,3 +1,4 @@
+"""タイルに関する、汎用的な関数を提供する。"""
 from broccoli import register
 from broccoli import const
 
@@ -20,4 +21,4 @@ def only_player(self, obj=None):
 def goal(self, obj):
     """プレイヤーが乗ったら、次のマップへ移動する。"""
     if obj.kind == const.PLAYER:
-        obj.canvas.manager.next_canvas()
+        obj.canvas.manager.jump()

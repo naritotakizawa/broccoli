@@ -1,11 +1,11 @@
-"""ゲームのシステム部分に関するモジュール。
+"""ローグライク系ゲームのゲームシステムを提供する。
 
-現在は、ローグライクに使えそうなシステムクラスだけを提供しています。
-つまり、左右上下に移動ができ、攻撃ができ、自分の番が終わったら敵達が行動する、といったものです。
+左右上下に移動ができ、攻撃ができ、自分の番が終わったら敵達が行動する、とゲームシステムが主です。
 
 """
 import tkinter as tk
 import tkinter.ttk as ttk
+from broccoli import register, parse_xy
 from broccoli.conf import settings
 from broccoli.dialog import LogAndActiveMessageDialog, ListDialog
 from broccoli.material.object import *
@@ -35,6 +35,7 @@ class RogueLikeSystem(BaseSystem):
     def start(self):
         # 0.1 秒ぐらいごとに、ゲームの状態を監視する
         self.canvas.after(100, self.monitor_game)
+        self.show_map_name()
         self.create_key_event()
 
     def get_key_events(self):
@@ -47,6 +48,7 @@ class RogueLikeSystem(BaseSystem):
             ('<{}>'.format(settings.ATTACK_KEY), self.attack),
             ('<{}>'.format (settings.SHOW_ITEM_KEY), self.show_item_dialog),
             ('<{}>'.format (settings.SHOW_MESSAGE_KEY), self.message.show),
+            ('<{}>'.format(settings.TALK_KEY), self.talk),
         ]
 
     def move(self, event):
@@ -58,15 +60,21 @@ class RogueLikeSystem(BaseSystem):
         pass
 
     def update_game_info(self):
-        """ゲームの情報を表示する。
+        """ゲームの情報を更新する。
 
-        0.1秒ごとに呼ばれるので、常に表示したいデータをここで表示すると便利です。
+        デフォルトでは0.1秒ごとに呼ばれます。
+        定期的に更新したいデータや表示があれば、上書きしてください。
 
         """
         pass
 
     def monitor_game(self):
-        """ゲームの状態を監視。0.1秒ごとにhpなどを表示する。"""
+        """ゲームの状態を監視する。
+
+        update_game_infoを0.1秒毎に呼び出し、ゲーム情報を更新しています。
+        秒を変更したかったり、他に呼び出したいメソッドがあれば上書きしてください。
+
+        """
         self.update_game_info()
         self.canvas.after(100, self.monitor_game)
 
@@ -110,18 +118,118 @@ class RogueLikeSystem(BaseSystem):
         """アイテムリストを表示する。"""
         pass
 
+    def show_map_name(self):
+        """マップ名をかっこよく表示する。"""
+        x, y = self.canvas.get_current_position_center()
+        text = ''
+        for char in self.canvas.name:
+            text += char
+            self.canvas.delete('start_message')
+            self.canvas.create_text(
+                x,
+                y,
+                anchor='center',
+                text=text,
+                font=self.font,
+                fill=self.color,
+                tag='start_message',
+            )
+            self.canvas.after(100)
+            self.canvas.update_idletasks()
+        self.canvas.after(1000)
+        self.canvas.delete('start_message')
+
+    def game_over(self):
+        """ゲームオーバー処理。"""
+        self.clear_key_event()
+        x, y = self.canvas.get_current_position_center()
+        self.canvas.create_text(
+            x,
+            y,
+            anchor='center',
+            text='Game Over',
+            font=self.font,
+            fill=self.color,
+        )
+
+    def simple_move(self, obj_id, x=None, y=None, material=None):
+        """layer[y][x]にキャラクターを移動する、ショートカットメソッドです。"""
+        x, y = parse_xy(x, y, material)
+        self.canvas.coords(obj_id, x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT)
+
+    def move_to_animation(
+            self, obj_id,
+            from_x=None, from_y=None, from_material=None,
+            to_x=None, to_y=None, to_material=None,
+            times=0.1, frame=10):
+        """今の場所から、layer[y][x]に向かって移動するアニメーションを行います。
+
+        timesの時間をかけて、frame回描画します。
+
+        """
+        # まずレイヤ内の座標に変換する。
+        from_x, from_y = parse_xy(from_x, from_y, from_material)
+        to_x, to_y = parse_xy(to_x, to_y, to_material)
+
+        current_x = from_x * settings.CELL_WIDTH
+        current_y = from_y * settings.CELL_HEIGHT
+        target_x = to_x * settings.CELL_WIDTH
+        target_y = to_y * settings.CELL_HEIGHT
+        diff_x = target_x - current_x
+        diff_y = target_y - current_y
+        step_x = diff_x / frame
+        step_y = diff_y / frame
+        for i in range(1, frame+1):
+            self.canvas.coords(obj_id, current_x+step_x*i, current_y+step_y*i)
+            self.canvas.update_idletasks()
+            self.canvas.after(int(times/frame*1000))
+            self.canvas.lift(obj_id)
+
+    def simple_damage_line(self, x=None, y=None, material=None, width=2, fill='red', times=0.1):
+        """キャラの右上から左下にかけて、線をつける。
+
+        x, yはlayer内の座標です。
+
+        """
+        x, y = parse_xy(x, y, material)
+        damage_line = self.canvas.create_line(
+            x*settings.CELL_WIDTH+settings.CELL_WIDTH,  # セルの幅も加えることを忘れずに
+            y*settings.CELL_HEIGHT,
+            x*settings.CELL_WIDTH,
+            y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,  # セルの高さも加えることを忘れずに
+            width=width, fill=fill,
+        )
+        self.canvas.update_idletasks()  # すぐに描画する
+        # デフォルトでは、0.1秒後にダメージ線を消す
+        self.canvas.after(int(times*1000))
+        self.canvas.delete(damage_line)
+
+    def talk(self, event):
+        """話しかける。"""
+        pass
+
 
 class RogueWithPlayer(RogueLikeSystem):
     """プレイヤーがいるローグライクシステム。"""
 
+    def __init__(self, message_class=LogAndActiveMessageDialog, show_item_dialog_class=ListDialog, x=None, y=None):
+        super().__init__(message_class=message_class, show_item_dialog_class=show_item_dialog_class)
+        # プレイヤーの初期座標
+        self.x = x
+        self.y = y
+
     def setup(self,):
         super().setup()
+        player_cls, kwargs = self.canvas.manager.player
+        kwargs.update({
+            'kind': const.PLAYER,
+            'die': register.functions['roguelike.object.player_die'],
+        })
         # プレイヤーがいないとダメ
         self.player = self.canvas.object_layer.create_material(
-            material_cls=self.canvas.manager.player,
-            name='あなた', kind=const.PLAYER
+            material_cls=player_cls, x=self.x, y=self.y, **kwargs
         )
-        self.canvas.move_camera(self.player)  # 主人公位置に合わせて表示部分を動かす
+        self.canvas.move_camera(material=self.player)  # 主人公位置に合わせて表示部分を動かす
 
     def move(self, event):
         """主人公の移動処理。"""
@@ -145,7 +253,7 @@ class RogueWithPlayer(RogueLikeSystem):
             if obj is None and tile.is_public(obj=self.player):
                 self.player.move(tile)
                 try:
-                    self.canvas.move_camera(self.player)
+                    self.canvas.move_camera(material=self.player)
                 except Exception:
                     # moveは背景のon_selfを呼び出しますが、その際次マップへ移動している可能性があります。
                     # 次マップへ移動している場合、canvas.move_cameraが参照しているcanvasオブジェクトは
@@ -174,7 +282,7 @@ class RogueWithPlayer(RogueLikeSystem):
         tile = self.canvas.tile_layer[y][x]
         obj = self.canvas.object_layer[y][x]
         self.player.attack(tile, obj)
-        self.canvas.move_camera(self.player)
+        self.canvas.move_camera(material=self.player)
         self.act_objects(exclude=[self.player])
         self.turn += 1
 
@@ -230,6 +338,25 @@ class RogueWithPlayer(RogueLikeSystem):
         dialog = self.show_item_dialog_class(parent=self, canvas=self.canvas)
         dialog.show(items=self.player.items, callback=lambda item: item.use())
 
+    def talk(self, event):
+        y, x = self.player.y, self.player.x
+        if self.player.direction == const.DOWN:
+            y += 1
+        elif self.player.direction == const.LEFT:
+            x -= 1
+        elif self.player.direction == const.RIGHT:
+            x += 1
+        elif self.player.direction == const.UP:
+            y -= 1
+
+        # マップの範囲外ならやめる
+        if not self.canvas.check_position(x, y):
+            return
+
+        obj = self.canvas.object_layer[y][x]
+        if obj is not None:
+            obj.talk(self.player)
+
 
 class RogueNoPlayer(RogueLikeSystem):
     """プレイヤーのいない、観戦用モード。"""
@@ -240,7 +367,7 @@ class RogueNoPlayer(RogueLikeSystem):
         # 中央にカメラ移動
         self.x = self.canvas.tile_layer.x_length // 2
         self.y = self.canvas.tile_layer.y_length // 2
-        self.canvas.move_camera(self.canvas.tile_layer[self.y][self.x])
+        self.canvas.move_camera(self.x, self.y)
 
     def move(self, event):
         """カメラ移動処理。"""
@@ -259,7 +386,7 @@ class RogueNoPlayer(RogueLikeSystem):
 
         self.x = x
         self.y = y
-        self.canvas.move_camera(self.canvas.tile_layer[self.y][self.x])
+        self.canvas.move_camera(self.x, self.y)
 
     def attack(self, event):
         """攻撃キーで次ターンになります。"""

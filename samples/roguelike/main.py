@@ -1,11 +1,15 @@
+from broccoli.containers import IndexDict
 from broccoli.manage import SimpleGameManager
-from map import dungeon1, dungeon2, dungeon3
+
+from map import tutorial
 from object import Dog
 
 
 class MyGame(SimpleGameManager):
-    canvas_list = [dungeon1, dungeon2, dungeon3]
-    player = Dog
+    canvas_list = IndexDict({
+        'チュートリアル': tutorial,
+    })
+    player = (Dog, {'name': 'あなた'})
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 """ゲーム中のアイテムに関するモジュール。
 
-Mapクラスにおける、item_layerに格納されるクラス群です。
+item_layerに格納されます。
 
 """
 from broccoli.funcstions import roguelike, do_nothing
@@ -10,8 +10,8 @@ from broccoli.material.base import BaseMaterial
 class BaseItem(BaseMaterial):
     """全てのアイテムの基底クラス。"""
 
-    def __init__(self, direction=0, diff=0, name=None, owner=None, **kwargs):
-        super().__init__(direction=direction, diff=diff, name=name, **kwargs)
+    def __init__(self, owner=None, **kwargs):
+        super().__init__(**kwargs)
         self.owner = owner
 
 

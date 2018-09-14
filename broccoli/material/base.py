@@ -10,9 +10,6 @@ objects_layerに格納されるもので、壁や木、岩、
 
 最後は、アイテム(item)です。
 
-tileとobjectの中にはどちらにも属せそうなものがありますが、この1背景につき1オブジェクトという仕様(システムクラスにもよります)や
-使いたい画像の透過具合(tileの画像内に透過部分があると、表示が上手くされません)などを見ながら使うと良いでしょう。
-
 """
 import inspect
 import random
@@ -22,68 +19,73 @@ from broccoli import const
 
 class BaseMaterial:
     """マップ上に表示される背景、物体、キャラクター、アイテムの基底クラス。"""
-    attrs = []
-    func_attrs = []
+    name = None
+    vars = {}  # フラグ等の値を格納する辞書として使えます。jsonでの読み込み・保存に対応している辞書です。
 
-    def __init__(self, direction=0, diff=0, name=None, **kwargs):
+    attrs = []  # このマテリアルが持つ、固有の属性を書きます。
+    func_attrs = []  # マテリアルの固有属性のうち、関数となるものを書きます。
+
+    def __init__(self, x=None, y=None, canvas=None, system=None, layer=None, direction=0, diff=0, name=None, vars=None, **kwargs):
         """初期化処理
 
         全てのマテリアルインスタンスは重要な属性として
-        ・マップ上でのy座標、x座標
-        ・キャラを識別するためのid
-        ・自分が今いるゲームキャンバスオブジェクト
-        ・今のゲームキャンバスのシステムオブジェクト
+        - マテリアルの名前
+        - マテリアルの変数辞書(vars)
+        - マテリアルの向き
+        - マテリアルの差分
+        - レイヤ内の位置にあたるx, y座標
+        - 所属するゲームキャンバスクラス
+        - 所属するゲームシステムクラス
+        - 所属するレイヤクラス(背景ならtile_layer等)
+        - マテリアルを識別するためのid
         を持っています。
 
-        x, y座標、canvas, systemはマップの作成時に設定されます。
-        idは、canvas.create_imageで返される一意な数値で、各キャラをcanvas上で識別するためのIDです。
-        canvasは、ゲームキャンバスクラス(tk.Canvasのサブクラス)のインスタンスで、描画などを担当します。
-        systemには、そのマップにおける移動や戦闘など、ゲームのシステム部分を担当するオブジェクトがあります。
+        更に、マテリアルの種類や具象クラスによっては固有の属性を持ちます。
 
-        idを使うことでself.canvas.itemconfig(id, image=self.image)といった描画画像の変更や
-        self.canvas.delete(id)での削除
-        self.canvas.coords(id, x, y)での移動に使えます。
-        idは必ず一意なものになります。
-
-        マテリアルを表す名前(name)、今の向き(direction)、向きの差分カウント(diff)などの属性もあります。
+        基本的に、レイヤクラスのcreate_materialを使ってマテリアルを生成することになります。
 
         """
         cls = type(self)
+
+        self.x = x
+        self.y = y
+        self.canvas = canvas
+        self.system = system
+        self.layer = layer
+        self.id = None
 
         if name is None:
             self.name = cls.name
         else:
             self.name = name
 
+        if vars is None:
+            self.vars = cls.vars
+        else:
+            self.vars = vars
+
         # 向きに関する属性
         self.direction = direction  # 現在の向き。移動のほか、攻撃などにも影響する
         self.diff = diff  # 同じ向きを連続で向いた数。差分表示等に使う
 
         # マテリアルインスタンスの属性を設定
-        # kwargsにあればそれを、そうでなければクラス属性を設定
-        # 更に関数ならば、メソッドとして灯籠
         for attr_name in cls.attrs:
+            # kwargsにあればそれを、そうでなければクラス属性を設定
             if attr_name in kwargs:
                 value = kwargs[attr_name]
             else:
                 value = getattr(cls, attr_name)
 
+            # 関数ならば、メソッドとして登録。
             if attr_name in self.func_attrs:
                 value = self.create_method(value)
 
-            # クラス属性の空リストや辞書等を使った場合は、他と共有されるのでcopy
+            # クラス属性でリストや辞書等を使った場合は、他と共有されるのでcopy
             # ミュータブルなオブジェクト全てに言えるので、いずれ汎用的に。
             if isinstance(value, (list, dict)):
                 value = value.copy()
 
             setattr(self, attr_name, value)
-
-        self.y = None
-        self.x = None
-        self.canvas = None
-        self.system = None
-        self.id = None
-        self.layer = None
 
     def __str__(self):
         return '{}({}, {}) - {}'.format(self.name, self.x, self.y, self.id)
@@ -92,7 +94,7 @@ class BaseMaterial:
         """向きを変え、その画像を反映させる。
 
         同じ向きを向いた場合は差分を増やし、そして画像を反映させます。
-        キャラクターを歩行させたい場合に便利です。
+        キャラクターを歩行させたい、歩行させる際のグラフィック更新に便利です。
 
         """
         # 前と違う向き
@@ -111,13 +113,13 @@ class BaseMaterial:
         """4方向の座標を取得するショートカットメソッドです。
 
         [
-            (DOWN, self.x, self.y+1),
+            (DOWN, self.x, self.y+1),にも
             (LEFT, self.x-1, self.y),
             (RIGHT, self.x+1, self.y),
             (UP, self.x, self.y - 1),
         ]
         といったリストを返します。
-        DOWNなどは向きに直接代入できる定数です。
+        DOWNなどは向きに直接代入(direction=DOWN)できる定数で、change_directionメソッドにもそのまま渡せます。
         また、その方向がマップの範囲外になる場合は無視されます。
         空のリストが返ったら、4方向が全てマップの範囲外ということです。
 
@@ -149,23 +151,18 @@ class BaseMaterial:
         sorted_materials = sorted(materials, key=_nearest)
         return sorted_materials[0]
 
-    def to_dict(self):
-        result = {
-            'name': self.name,
-            'direction': self.direction,
-            'diff': self.diff,
-        }
-        for attr_name in self.attrs:
-            value = getattr(self, attr_name)
-            if attr_name in self.func_attrs:
-                value = value.name  # 関数のname属性に、registerに登録する名前が入っている
-            result[attr_name] = value
-        return result
-
     @classmethod
     def get_class_attrs(cls):
+        """クラスの属性を辞書として返します。
+
+        マテリアルの主要なクラス属性を辞書として返します。
+        まだインスタンス化していない状態で、そのマテリアルクラスの属性を確認したい場合に有効です。
+        エディタでのマテリアル説明欄に使っています。
+
+        """
         result = {
             'name': cls.name,
+            'vars': cls.vars,
         }
         for attr_name in cls.attrs:
             value = getattr(cls, attr_name)
@@ -173,24 +170,64 @@ class BaseMaterial:
         return result
 
     def get_instance_attrs(self):
+        """マテリアルインスタンスの属性を返します。
+
+        マテリアルのコピーを作りたい場合は、dumpを利用してください。
+
+        """
         result = {
             'name': self.name,
             'direction': self.direction,
             'diff': self.diff,
+            'vars': self.vars,
         }
         for attr_name in self.attrs:
             value = getattr(self, attr_name)
             result[attr_name] = value
         return result
 
-    def copy(self):
+    def dump(self):
+        """cls, kwargsの形式でマテリアルを返す。
+
+        cls, kwargs = material.dump()
+        layer.create_material(material_cls=cls, **kwargs)
+
+        のようにするとマテリアルのコピーが作れます。
+
+        マテリアルのある属性がリストや辞書だった場合で、
+        内部にマテリアルを格納していた場合は(cls, kwargs)形式に変換されていきます。
+
+        """
         cls = type(self)
         kwargs = self.get_instance_attrs()
-        return cls(**kwargs)
+        for name, value in kwargs.items():
+            # リストだった場合、内部にマテリアルがあれば(cls, kwargs)形式に
+            if isinstance(value, (list, tuple)):
+                for i, data in enumerate(value):
+                    if isinstance(data, BaseMaterial):
+                        value[i] = data.dump()
+
+            # 辞書だった場合、内部にマテリアルがあれば(cls, kwargs)形式に
+            elif isinstance(value, dict):
+                for attr_name, attr_value in value.items():
+                    if isinstance(attr_value, BaseMaterial):
+                        value[name] = attr_name.dump()
+        return cls, kwargs
 
     def create_method(self, func):
+        """マテリアルのメソッドとして関数を登録します。"""
+
         # 既にメソッドだった場合はそのままにする
         # 既にメソッドになっているケースとしては、copyでの複製インスタンス化時
         if not inspect.ismethod(func):
             func = types.MethodType(func, self)
         return func
+
+    def delete(self):
+        """マテリアルを削除する。
+
+        material.layer.delete_material(material)
+        を、簡単に書くためのショートカットです。
+
+        """
+        self.layer.delete_material(self)

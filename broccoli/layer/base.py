@@ -1,12 +1,12 @@
 """ゲームキャンバスにおける、レイヤーを扱うモジュールです。
 
 ゲームキャンバス内のデータは、レイヤーという層に格納されます。
-背景は背景レイヤーに、キャラクターや物体はオブジェクトレイヤー、という具合です。
+背景は背景レイヤーに、キャラクターや物体はオブジェクトレイヤー、アイテムはアイテムレイヤーという具合です。
 それらのレイヤーを作成するためのクラスを提供しています。
 
 """
-import json
 import random
+from broccoli.conf import settings
 
 
 class BaseLayer:
@@ -17,10 +17,8 @@ class BaseLayer:
         self.canvas = None
 
     def put_material(self, material, x, y):
+        """レイヤに、マテリアルを登録する。"""
         self[y][x] = material
-        material.x = x
-        material.y = y
-        material.layer = self
 
     def all(self, include_none=True):
         """レイヤ内のものを全て返す。
@@ -34,23 +32,61 @@ class BaseLayer:
                 if include_none or col:
                     yield x, y, col
 
-    def create_material(self, material_cls, x=None, y=None, **kwargs):
-        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う"""
-        # マテリアルの生成と初期設定
-        material = self.canvas.system.create_material(material_cls, **kwargs)
+    def get(self, **kwargs):
+        """レイヤ内のマテリアルを検索する。"""
+        for _, _, material in self.all():
+            for key, value in kwargs.items():
+                attr = getattr(material, key, None)
+                if attr != value:
+                    break
+            else:
+                return material
 
-        # レイヤへの配置
+    def filter(self, **kwargs):
+        """レイヤ内のマテリアルを検索する。"""
+        for _, _, material in self.all():
+            for key, value in kwargs.items():
+                attr = getattr(material, key, None)
+                if attr != value:
+                    break
+            else:
+                yield material
+
+    def create_material(self, material_cls, x=None, y=None, **kwargs):
+        """マテリアルの生成と初期設定、レイヤへの配置、キャンバスへの描画を行う。
+
+        material_clsはクラスオブジェクトを渡せますが、インスタンスも渡せます。
+        インスタンスを渡した場合は、そのマテリアルの__init__が呼ばれません。
+        既にほかの場所で作成したマテリアルを流用したい場合は、インスタンスを渡すだけで済みます。
+
+        """
+        canvas = self.canvas
+        system = canvas.system
+
         # x,y座標の指定がなければ座標を探す
         if x is None or y is None:
-            x, y = self.get_random_empty_space(material)
-        self.put_material(material, x, y)
+            x, y = self.get_random_empty_space(material_cls)
 
-        # キャンバスへの描画
-        self.canvas.create_material(material)
+        kwargs.update({
+            'system': system,
+            'canvas': canvas,
+            'layer': self,
+            'x': x,
+            'y': y,
+        })
+        material = material_cls(**kwargs)
+
+        id = self.canvas.create_image(
+            x*settings.CELL_WIDTH,
+            y*settings.CELL_HEIGHT,
+            image=material.image, anchor='nw'
+        )
+        material.id = id
+        self.put_material(material, x, y)
         return material
 
     def delete_material(self, material):
-        """マテリアルを削除する"""
+        """マテリアルを削除する。"""
         raise NotImplementedError
 
     def get_empty_space(self, material=None):
@@ -106,21 +142,6 @@ class BaseTileLayer(BaseLayer):
             if tile.is_public():
                 yield x, y
 
-    def to_json(self, path):
-        """背景レイヤをjsonとして出力する。"""
-        data = {
-            'x_length': self.x_length,
-            'y_length': self.y_length,
-            'layer': [[None for _ in range(self.x_length)] for _ in range(self.y_length)],
-        }
-        for x, y, tile in self.all():
-            data['layer'][y][x] = {
-                'class_name': tile.__class__.__name__,
-                'kwargs': tile.to_dict(),
-            }
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(data, file)
-
     def create_material(self, material_cls, x=None, y=None, **kwargs):
         material = super().create_material(material_cls, x=x, y=y, **kwargs)
         self.canvas.lower(material.id)  # 背景は一番下に配置する
@@ -160,29 +181,13 @@ class BaseObjectLayer(BaseLayer):
     def get_empty_space(self, material=None):
         """空いているスペースを全てyieldで返す。
 
-        そのオブジェクトにとって、移動可能(配置可能)な座標を返します。
+        そのオブジェクトを受け入れるタイルであり、
+        まだオブジェクトがない座標ならばOK。
 
         """
         for x, y, tile in self.tile_layer.all():
             if tile.is_public(obj=material) and self[y][x] is None:
                 yield x, y
-
-    def to_json(self, path):
-        """オブジェクトレイヤーをJSON出力する"""
-        data = {
-            'layer': [[None for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
-        }
-        for x, y, obj in self.all():
-            if obj is None:
-                data['layer'][y][x] = None
-            else:
-                data['layer'][y][x] = {
-                    'class_name': obj.__class__.__name__,
-                    'kwargs': obj.to_dict(),
-                }
-
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(data, file)
 
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
@@ -208,13 +213,16 @@ class BaseItemLayer(BaseLayer):
         self.tile_layer = None
 
     def put_material(self, material, x, y):
+        """アイテムを配置する。
+
+        アイテムは1座標に複数格納できます。つまり、リストで管理しています。
+        そのため、アイテムの配置はappendメソッドを使います。
+
+        """
         self[y][x].append(material)
-        material.x = x
-        material.y = y
-        material.layer = self
 
     def create(self):
-        """レイヤーの作成、描画を行う"""
+        """レイヤーの作成、描画を行う。"""
         self.layer = [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)]
         self.create_layer()
 
@@ -228,23 +236,6 @@ class BaseItemLayer(BaseLayer):
         for x, y, tile in self.tile_layer.all():
             if tile.is_public():
                 yield x, y
-
-    def to_json(self, path):
-        """アイテムレイヤーをJSON出力する。"""
-        data = {
-            'layer': [[[] for _ in range(self.tile_layer.x_length)] for _ in range(self.tile_layer.y_length)],
-        }
-        for x, y, items in self.all():
-            if items:
-                data['layer'][y][x] = [
-                    {'class_name': item.__class__.__name__, 'kwargs': item.to_dict()} for item in items
-                ]
-
-            else:
-                data['layer'][y][x] = []
-
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(data, file)
 
     def clear(self):
         """layer内を全てNoneにし、表示中のオブジェクトを削除します。"""
@@ -261,3 +252,25 @@ class BaseItemLayer(BaseLayer):
         """マテリアルを削除する"""
         self[material.y][material.x].remove(material)
         self.canvas.delete(material.id)
+
+    def get(self, **kwargs):
+        """レイヤ内のアイテムを検索する。"""
+        for _, _, items in self.all():
+            for item in items:
+                for key, value in kwargs.items():
+                    attr = getattr(item, key, None)
+                    if attr != value:
+                        break
+                else:
+                    return item
+
+    def filter(self, **kwargs):
+        """レイヤ内のアイテムを検索する。"""
+        for _, _, items in self.all():
+            for item in items:
+                for key, value in kwargs.items():
+                    attr = getattr(item, key, None)
+                    if attr != value:
+                        break
+                else:
+                    yield item

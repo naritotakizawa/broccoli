@@ -1,6 +1,7 @@
+"""オブゾェクトレイヤの具象クラスを提供する。"""
 import json
 import random
-from broccoli import register
+from broccoli import serializers
 from broccoli.layer import BaseObjectLayer
 
 
@@ -65,6 +66,7 @@ class RandomObjectLayer(BaseObjectLayer):
     def create_layer(self):
         for i in range(self.number_of_enemies):
             enemy = random.choice(self.enemies)
+            # ランダム生成の場合は、向きや差分もランダム。
             self.create_material(material_cls=enemy, direction=-1, diff=-1)
 
 
@@ -74,19 +76,12 @@ class JsonObjectLayer(BaseObjectLayer):
     def __init__(self, file_path):
         super().__init__()
         with open(file_path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
+            data = json.load(file, cls=serializers.JsonDecoder)
         self.data = data['layer']
 
     def create_layer(self):
         for y, row in enumerate(self.data):
             for x, col in enumerate(row):
                 if col is not None:
-                    class_name = col['class_name']
-                    kwargs = col['kwargs']
-                    cls = register.objects[class_name]
-                    for func_attr in cls.func_attrs:
-                        if func_attr in kwargs:
-                            func_name = kwargs[func_attr]
-                            func = register.functions[func_name]
-                            kwargs[func_attr] = func
-                    self.create_material(material_cls=cls, x=x, y=y, **kwargs)
+                    obj_cls, kwargs = col
+                    self.create_material(material_cls=obj_cls, x=x, y=y, **kwargs)

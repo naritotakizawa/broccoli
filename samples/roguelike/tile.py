@@ -25,5 +25,5 @@ class WallTile(BaseTile):
 
 @register.tile
 class MapTip1(BaseTile):
-    name = 'マップチップ1'
+    name = '森・草原マップチップ'
     image = NormalSplite('img/tipset1.png')

@@ -1,9 +1,9 @@
 """エディタで使うゲームキャンバスクラスを提供するモジュール
 
 broccoli.canvasにあるゲームキャンバスクラスを元に、エディタで使いやすくするためのクラスを提供しています。
+キャンバス内をクリックした際の挙動をカスタマイズしたり、
+右クリックで各マテリアルの情報確認・変更ができる、といった機能が追加されています。
 
-broccoli.canvasのゲームキャンバスと違うのは、システムクラスが不要なことと
-キャンバス内をクリックした際、そこにある背景やオブジェクトの取得や交換といった機能をサポートしていることです。
 また、これらのキャンバスにスクロールバーをつけたttk.Frameクラスのサブクラスも提供しています。
 
 """
@@ -17,15 +17,23 @@ from broccoli.canvas import GameCanvas2D
 from broccoli.material import BaseTile
 from .window import SearchWindow, OneInputWindow
 
+# gridでのsticky=に指定できる定数。全方向に引き伸ばす。
 STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
 
 
 class TestTile(BaseTile):
+    """ダミータイル。
+
+    マップエディタを開いた際の初期タイルとして配置されています。
+    tile_layerは必ず何らかのタイルが必要なため、初回はこのタイルを使っています。
+
+    """
     name = 'テストタイル'
     image = NoDirection(os.path.join(settings.BROCCOLI_IMG_DIR, 'test.png'))
 
 
 def method_command(material, attr_name, label):
+    """マテリアルの属性(メソッド)を変更する。"""
     def _method_command():
         def callback(func):
             method = material.create_method(func)
@@ -38,6 +46,7 @@ def method_command(material, attr_name, label):
 
 
 def str_command(material, attr_name, label):
+    """マテリアルの属性(文字列)を変更する。"""
     def _str_command():
         def callback(value):
             setattr(material, attr_name, value)
@@ -49,6 +58,7 @@ def str_command(material, attr_name, label):
 
 
 def int_command(material, attr_name, label):
+    """マテリアルの属性(数値)を変更する。"""
     def _int_command():
         def callback(value):
             setattr(material, attr_name, value)
@@ -60,13 +70,15 @@ def int_command(material, attr_name, label):
 
 
 def delete_command(material, frame):
+    """マテリアルと、そのマテリアル情報表示部分を削除する。"""
     def _delete_command():
-        material.layer.delete_material(material)
+        material.delete()
         frame.destroy()
     return _delete_command
 
 
 class MaterialListFrame(tk.Toplevel):
+    """各マテリアルの情報確認、変更、削除をするポップアップウィンドウ。"""
 
     def __init__(self, tile, obj, items, **kwargs):
         super().__init__(**kwargs)
@@ -102,9 +114,9 @@ class MaterialListFrame(tk.Toplevel):
                 label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
                 ttk.Button(tile_frame, text='振る舞いの変更', command=method_command(self.tile, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
-            # 属性がリストの場合(未実装)
-            elif isinstance(attr_value, list):
-                label = ttk.Label(tile_frame, text=','.join(attr_value))
+            # 属性がリストや辞書の場合(未実装)
+            elif isinstance(attr_value, (list, dict)):
+                label = ttk.Label(tile_frame, text=attr_value)
                 label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
             # 属性が文字列の場合
@@ -143,8 +155,8 @@ class MaterialListFrame(tk.Toplevel):
                 ttk.Button(obj_frame, text='振る舞いの変更', command=method_command(self.obj, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
             # 属性がリストの場合(未実装)
-            elif isinstance(attr_value, list):
-                label = ttk.Label(obj_frame, text=','.join(attr_value))
+            elif isinstance(attr_value, (list, dict)):
+                label = ttk.Label(obj_frame, text=attr_value)
                 label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
             # 属性が文字列の場合
@@ -184,8 +196,8 @@ class MaterialListFrame(tk.Toplevel):
                     ttk.Button(item_frame, text='振る舞いの変更', command=method_command(item, attr_name, label)).grid(row=row, column=2, sticky=STICKY_ALL)
 
                 # 属性がリストの場合(未実装)
-                elif isinstance(attr_value, list):
-                    label = ttk.Label(item_frame, text=','.join(attr_value))
+                elif isinstance(attr_value, (list, dict)):
+                    label = ttk.Label(item_frame, text=attr_value)
                     label.grid(row=row, column=1, sticky=STICKY_ALL, padx=50)
 
                 # 属性が文字列の場合
@@ -225,40 +237,15 @@ class EditorCanvas(GameCanvas2D):
         if click_callback is not None:
             self.bind('<1>', self.click)
 
-    def draw_cell_line(self):
-        """各セルに線を引き、1つ1つのセルをわかりやすくします。"""
-        for x, y, tile in self.tile_layer.all():
-            self.create_rectangle(
-                x*settings.CELL_WIDTH,
-                y*settings.CELL_HEIGHT,
-                x*settings.CELL_WIDTH+settings.CELL_WIDTH,
-                y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,
-                tag='line'
-            )
-
-    def create_red_line(self, material):
-        self.create_rectangle(
-            material.x * settings.CELL_WIDTH,
-            material.y * settings.CELL_HEIGHT,
-            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
-            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
-            tag='redline',
-            outline='red',
-            width=10
-        )
-
     def click(self, event):
         """クリックされた座標の背景、タイルを返す"""
         canvas_x = self.canvasx(event.x)
         canvas_y = self.canvasy(event.y)
         try:
-            x, y = self.get_index_from_xy(canvas_x, canvas_y)
+            tile, obj, items = self.abs_xy_to_materials(canvas_x, canvas_y)
         except TypeError:
             pass
         else:
-            tile = self.tile_layer[y][x]
-            obj = self.object_layer[y][x]
-            items = self.item_layer[y][x]
             if self.return_kind == 'tile':
                 self.click_callback(tile)
             elif self.return_kind == 'object':
@@ -272,13 +259,10 @@ class EditorCanvas(GameCanvas2D):
         canvas_x = self.canvasx(event.x)
         canvas_y = self.canvasy(event.y)
         try:
-            x, y = self.get_index_from_xy(canvas_x, canvas_y)
+            tile, obj, items = self.abs_xy_to_materials(canvas_x, canvas_y)
         except TypeError:
             pass
         else:
-            tile = self.tile_layer[y][x]
-            obj = self.object_layer[y][x]
-            items = self.item_layer[y][x]
             MaterialListFrame(tile=tile, obj=obj, items=items, master=self)
 
 

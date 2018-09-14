@@ -1,9 +1,6 @@
 """よく使うTreeView+αを提供するモジュール
 
-- 背景のリスト表示と、背景の説明やプレビュー
-- オブジェクトのリスト表示と、オブジェクトの説明やプレビュー
-- ユーザー定義関数のリスト表示と、関数の説明(docstring)
-などの、よく使うウィジェットを提供しています。
+背景やオブジェクト、アイテムのリスト表示、プレビュー、属性一覧の表示など
 
 """
 import tkinter as tk
@@ -82,8 +79,8 @@ class BaseList(ttk.Frame):
         if isinstance(material, (list,)):
             material = material[0]
 
-        self.canvas.delete('redline')
-        self.canvas.create_red_line(material)
+        self.canvas.delete('highlight')
+        self.canvas.highlight_material(material)
         self.select_callback(material)
 
 

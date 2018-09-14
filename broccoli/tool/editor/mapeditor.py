@@ -1,4 +1,4 @@
-"""エディタエディタ"""
+"""マップエディタ"""
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
@@ -13,6 +13,12 @@ STICKY_ALL = (tk.N, tk.S, tk.E, tk.W)
 
 
 class CustomHighLight(tk.Toplevel):
+    """マテリアルの関数を検索するためのポップアップウィンドウ。
+
+    「タイル」の「is_public」が「return_true」なものを全て強調表示したい、
+    といったケースに使えるウィジェットです。
+
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -22,7 +28,7 @@ class CustomHighLight(tk.Toplevel):
         self.create_widgets()
 
     def create_widgets(self):
-        search = SearchFrame(self,select_callback=self.select_function)
+        search = SearchFrame(self, select_callback=self.select_function)
         search.grid(row=0, column=0, sticky=STICKY_ALL, columnspan=2)
 
         ttk.Label(self, text='マテリアル').grid(column=0, row=1, sticky=STICKY_ALL)
@@ -40,26 +46,26 @@ class CustomHighLight(tk.Toplevel):
         func = self.select
         attr = self.attr_var.get()
         canvas = self.master.canvas_frame.canvas
-        canvas.delete('redline')
+        canvas.delete('highlight')
         kind = self.material_var.get()
         if kind == 'タイル':
             for x, y, material in canvas.tile_layer.all(include_none=False):
                 material_attr = getattr(material, attr, None)
                 if material_attr and material_attr.name == func.name:
-                    canvas.create_red_line(material)
+                    canvas.highlight_material(material)
 
         elif kind == 'オブジェクト':
             for x, y, material in canvas.object_layer.all(include_none=False):
                 material_attr = getattr(material, attr, None)
                 if material_attr and material_attr.name == func.name:
-                    canvas.create_red_line(material)
+                    canvas.highlight_material(material)
 
         elif kind == 'アイテム':
             for x, y, materials in canvas.item_layer.all(include_none=False):
                 for material in materials:
                     material_attr = getattr(material, attr, None)
                     if material_attr and material_attr.name == func.name:
-                        canvas.create_red_line(material)
+                        canvas.highlight_material(material)
 
 
 class MapEditorConfig(ttk.Frame):
@@ -184,19 +190,25 @@ class MapEditor(ttk.Frame):
         """作成中キャンバス欄をクリックされたら呼ばれる"""
         x, y = tile.x, tile.y
         if isinstance(self.select, BaseTile):
-            tile.layer.delete_material(tile)
+            tile.delete()
+            cls, kwargs = self.select.dump()
             self.canvas_frame.canvas.tile_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=cls, x=x, y=y,
+                **kwargs,
             )
         elif isinstance(self.select, BaseObject):
             if obj is not None:
-                obj.layer.delete_material(self)
+                obj.delete()
+            cls, kwargs = self.select.dump()
             self.canvas_frame.canvas.object_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=cls, x=x, y=y,
+                **kwargs,
             )
         elif isinstance(self.select, BaseItem):
+            cls, kwargs = self.select.dump()
             self.canvas_frame.canvas.item_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=cls, x=x, y=y,
+                **kwargs,
             )
 
         else:
@@ -269,17 +281,17 @@ class MapEditor(ttk.Frame):
 
     def show_public(self):
         """通行可能タイルを強調ボタンで呼ばれる"""
-        self.canvas_frame.canvas.delete('redline')
+        self.canvas_frame.canvas.delete('highlight')
         for x, y, tile in self.canvas_frame.canvas.tile_layer.all(include_none=False):
             if tile.is_public.name == 'generic.return_true':
-                self.canvas_frame.canvas.create_red_line(tile)
+                self.canvas_frame.canvas.highlight_material(tile)
 
     def show_private(self):
         """通行不可タイルを強調で呼ばれる"""
-        self.canvas_frame.canvas.delete('redline')
+        self.canvas_frame.canvas.delete('highlight')
         for x, y, tile in self.canvas_frame.canvas.tile_layer.all(include_none=False):
             if tile.is_public.name == 'generic.return_false':
-                self.canvas_frame.canvas.create_red_line(tile)
+                self.canvas_frame.canvas.highlight_material(tile)
 
     def show_mass(self):
         """マス目をつけるで呼ばれる"""
@@ -295,7 +307,7 @@ class MapEditor(ttk.Frame):
 
     def delete_show_marker(self):
         """強調タイルを削除で呼ばれる"""
-        self.canvas_frame.canvas.delete('redline')
+        self.canvas_frame.canvas.delete('highlight')
 
 
 def main():

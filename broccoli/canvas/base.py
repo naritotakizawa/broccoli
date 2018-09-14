@@ -2,17 +2,21 @@
 
 このモジュールで提供しているクラスを、フレームワーク内では「ゲームキャンバス」と呼ぶことにします。
 
-モジュール内のクラスはtk.Canvasのサブクラスで、ゲーム内における1つのマップを表現します。
-各クラスはインスタンス化後にstartメソッドを呼び出すことで、そのマップを楽しむことができます(できるように、実装します)。
+モジュール内のクラスはtk.Canvasのサブクラスで、ゲーム内における1つのマップ、又はゲームを表現します。
+インスタンス化することで、そのマップ又はゲームが表示されるようになり、
+startメソッドを呼び出すことで、そのマップ又はゲームが動作し楽しむことができます。
 
-多くの場合、マップを表現・管理するためのいくつかの層(レイヤー)があり、ゲームシステムを担当するsystemオブジェクトを持っています。
+ゲームキャンバスクラスはいくつかの層...タイルレイヤーやオブジェクトレイヤー、アイテムレイヤーといったものを持っており、
+更にゲームシステムを担当するオブジェクトも持っています。
 これにより、マップ毎に異なるゲームシステムの採用や、同じマップをいくつかのゲームシステムで動作させる、といったことができます。
 
-また、実際の画面への描画や、キャンバス情報の取得、アニメーションといった処理も行います。
+tk.Canvasのサブクラスなため、実際の画面への描画や、キャンバス情報の取得、アニメーションといった処理も担当します。
 
 """
+import json
 import tkinter as tk
 from tkinter import filedialog
+from broccoli import parse_xy, serializers
 from broccoli.conf import settings
 from broccoli.layer import EmptyObjectLayer, EmptyItemLayer
 from broccoli.system import BaseSystem
@@ -75,7 +79,7 @@ class GameCanvas2D(tk.Canvas):
         # ゲームのシステムクラスを動作させる。
         self.system.start()
 
-    def move_camera(self, target):
+    def move_camera(self, x=None, y=None, material=None):
         """ターゲットにピントを合わせる。
 
         実際は、キャンバス内をスクロールしているだけです。
@@ -86,12 +90,13 @@ class GameCanvas2D(tk.Canvas):
         1.0ならば1000px部分までスクロール、0.5ならば500px部分までスクロール、のように動作します。
 
         """
+        x, y = parse_xy(x, y, material)
 
         # 単純にtarget.y / self.tile_layer.y_lengthのようにすると、キャラクターが一番上や左に配置されるようにスクロールされる
         # 5セル分の表示ならば、更に上を2つ空けるほうが見栄えがよくなります。
         # DISPLAY_Y_NUM//2 とすると、5セルなら上に2つ空けて、7セルなら上に3つ空けて、といった具合になります。
-        fractal_x = (target.x-settings.DISPLAY_X_NUM//2) / self.tile_layer.x_length
-        fractal_y = (target.y-settings.DISPLAY_Y_NUM//2) / self.tile_layer.y_length
+        fractal_x = (x-settings.DISPLAY_X_NUM//2) / self.tile_layer.x_length
+        fractal_y = (y-settings.DISPLAY_Y_NUM//2) / self.tile_layer.y_length
         self.xview_moveto(fractal_x)
         self.yview_moveto(fractal_y)
 
@@ -122,8 +127,8 @@ class GameCanvas2D(tk.Canvas):
 
         x, yはレイヤ内の座標です。
 
-        ・x, yがマイナスの値の場合
-        ・マップの範囲外の場合
+        - x, yがマイナスの値の場合
+        - マップの範囲外の場合
         にはFalseを返します。
 
         """
@@ -136,88 +141,60 @@ class GameCanvas2D(tk.Canvas):
         """現在のマップデータを、jsonで出力する。"""
         file_path = filedialog.asksaveasfilename(title='背景の保存先')
         if file_path:
-            self.tile_layer.to_json(file_path)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.tile_layer, file, cls=serializers.JsonEncoder, indent=4)
 
         file_path = filedialog.asksaveasfilename(title='オブジェクトの保存先')
         if file_path:
-            self.object_layer.to_json(file_path)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.object_layer, file, cls=serializers.JsonEncoder, indent=4)
 
         file_path = filedialog.asksaveasfilename(title='アイテムの保存先')
         if file_path:
-            self.item_layer.to_json(file_path)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.item_layer, file, cls=serializers.JsonEncoder, indent=4)
 
-    def get_index_from_xy(self, click_x, click_y):
-        """絶対座標を元にレイヤ内でのxyを返す。
-
-        例えば、クリックされた座標にあるマテリアルを取得したい場合に有効です。
-
-        # クリック座標(event.x, event.y)を、キャンバス内の絶対座標に変換
-        canvas_x = self.canvasx(event.x)
-        canvas_y = self.canvasy(event.y)
-
-        x, y = self.get_index_from_xy(canvas_x, canvas_y)
-        tile = self.tile_layer[y][x]
-
-        """
-        click_x /= settings.CELL_WIDTH
-        click_y /= settings.CELL_HEIGHT
+    def abs_xy_to_layer_xy(self, abs_x, abs_y):
+        """絶対座標をレイヤ内のx,yに変換する。"""
+        layer_x = abs_x / settings.CELL_WIDTH
+        layer_y = abs_y / settings.CELL_HEIGHT
         for x, y, tile in self.tile_layer.all():
-            if x <= click_x <= x + 1:
-                if y <= click_y <= y + 1:
+            if x <= layer_x < x + 1:
+                if y <= layer_y < y + 1:
                     return x, y
 
-    def simple_move(self, obj_id, x, y):
-        """layer[y][x]にキャラクターを移動する、ショートカットメソッドです。
+    def abs_xy_to_materials(self, abs_x, abs_y):
+        """クリックされた座標の3マテリアルを返す。"""
+        x, y = self.abs_xy_to_layer_xy(abs_x, abs_y)
+        return self.get_materials(x, y)
 
-        x, yはlayer内での座標です。
+    def get_materials(self, x=None,  y=None, material=None):
+        """その座標の3マテリアルを返す。"""
+        x, y = parse_xy(x, y, material)
+        tile = self.tile_layer[y][x]
+        obj = self.object_layer[y][x]
+        items = self.item_layer[y][x]
+        return tile, obj, items
 
-        """
-        self.coords(obj_id, x*settings.CELL_WIDTH, y*settings.CELL_HEIGHT)
+    def draw_cell_line(self):
+        """各セルに線を引き、1つ1つのセルをわかりやすくします。"""
+        for x, y, tile in self.tile_layer.all():
+            self.create_rectangle(
+                x*settings.CELL_WIDTH,
+                y*settings.CELL_HEIGHT,
+                x*settings.CELL_WIDTH+settings.CELL_WIDTH,
+                y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,
+                tag='line'
+            )
 
-    def move_to_animation(self, obj_id, from_x, from_y, to_x, to_y, times=0.1, frame=10):
-        """今の場所から、layer[y][x]に向かって移動するアニメーションを行います。
-
-        x, yはlayer内の座標です。
-        timesの時間をかけて、frame回描画します。
-
-        """
-        current_x = from_x * settings.CELL_WIDTH
-        current_y = from_y * settings.CELL_HEIGHT
-        target_x = to_x * settings.CELL_WIDTH
-        target_y = to_y * settings.CELL_HEIGHT
-        diff_x = target_x - current_x
-        diff_y = target_y - current_y
-        step_x = diff_x / frame
-        step_y = diff_y / frame
-        for i in range(1, frame+1):
-            self.coords(obj_id, current_x+step_x*i, current_y+step_y*i)
-            self.update_idletasks()
-            self.after(int(times/frame*1000))
-            self.lift(obj_id)
-
-    def simple_damage_line(self, x, y, width=2, fill='red', times=0.1):
-        """キャラの右上から左下にかけて、線をつける。
-
-        x, yはlayer内の座標です。
-
-        """
-        damage_line = self.create_line(
-            x*settings.CELL_WIDTH+settings.CELL_WIDTH,  # セルの幅も加えることを忘れずに
-            y*settings.CELL_HEIGHT,
-            x*settings.CELL_WIDTH,
-            y*settings.CELL_HEIGHT+settings.CELL_HEIGHT,  # セルの高さも加えることを忘れずに
-            width=width, fill=fill,
+    def highlight_material(self, material, outline='red', width=10):
+        """マテリアルを強調表示する。"""
+        self.create_rectangle(
+            material.x * settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT,
+            material.x * settings.CELL_WIDTH + settings.CELL_WIDTH,
+            material.y * settings.CELL_HEIGHT + settings.CELL_HEIGHT,
+            tag='highlight',
+            outline=outline,
+            width=width
         )
-        self.update_idletasks()  # すぐに描画する
-        # デフォルトでは、0.1秒後にダメージ線を消す
-        self.after(int(times*1000))
-        self.delete(damage_line)
-
-    def create_material(self, material):
-        """マテリアルの描画を行う"""
-        material_id = self.create_image(
-            material.x*settings.CELL_WIDTH,
-            material.y*settings.CELL_HEIGHT,
-            image=material.image, anchor='nw'
-        )
-        material.id = material_id

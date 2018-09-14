@@ -1,5 +1,6 @@
+"""タイルレイヤの具象クラスを提供する。"""
 import json
-from broccoli import register
+from broccoli import serializers
 from broccoli.layer import BaseTileLayer
 from .randomlib import RandomBackgroundCUI
 
@@ -51,7 +52,7 @@ class SimpleTileLayer(BaseTileLayer):
         for y, row in enumerate(self):
             for x, col in enumerate(row):
                 # 端っこなら、そこはPrivateTile(壁など)で詰める
-                if y == 0 or x == 0 or y == self.y_length - 1 or x ==self.x_length - 1:
+                if y == 0 or x == 0 or y == self.y_length - 1 or x == self.x_length - 1:
                     self.create_material(material_cls=self.outer_tile, x=x, y=y)
                 else:
                     self.create_material(material_cls=self.inner_tile, x=x, y=y)
@@ -84,24 +85,15 @@ class JsonTileLayer(BaseTileLayer):
 
     def __init__(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-        self.x_length = data['x_length']
-        self.y_length = data['y_length']
+            data = json.load(file, cls=serializers.JsonDecoder)
+        super().__init__(data['x_length'], data['y_length'])
         self.data = data['layer']
-        super().__init__(self.x_length, self.y_length)
 
     def create_layer(self):
         for y, row in enumerate(self.data):
             for x, col in enumerate(row):
-                class_name = col['class_name']
-                kwargs = col['kwargs']
-                cls = register.tiles[class_name]
-                for func_attr in cls.func_attrs:
-                    if func_attr in kwargs:
-                        func_name = kwargs[func_attr]
-                        func = register.functions[func_name]
-                        kwargs[func_attr] = func
-                self.create_material(material_cls=cls, x=x, y=y, **kwargs)
+                tile_cls, kwargs = col
+                self.create_material(material_cls=tile_cls, x=x, y=y, **kwargs)
 
 
 class ExpandTileLayer(BaseTileLayer):

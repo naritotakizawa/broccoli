@@ -47,8 +47,10 @@ class ListDialog(Dialog):
                 tag='item{}'.format(str(index)),
             )
 
+        # 一番上のアイテムを赤くして、選択済みっぽくする。
         self.widget.itemconfig('item0', fill='red')
 
+        # スクロールできるように設定
         try:
             _, _, _, max_y = self.widget.bbox('all')
         except TypeError:
@@ -70,11 +72,15 @@ class ListDialog(Dialog):
     def move(self, event):
         """リスト内を移動する。"""
         items = self.kwargs['items']
+
+        # 上キーを押して、一番上のアイテムを選択していなかったら少し上にスクロール
         if event.char == settings.UP_KEY and self.index > 0:
             self.widget.yview_scroll(-1, 'units')
             self.widget.itemconfig('item{}'.format(str(self.index)), fill=settings.DEFAULT_TEXT_COLOR)
             self.index -= 1
             self.widget.itemconfig('item{}'.format(str(self.index)), fill='red')
+
+        # 下キーを押して、一番下のアイテムを選択していなかったら少し下にスクロール
         elif event.char == settings.DOWN_KEY and self.index < len(items)-1:
             self.widget.yview_scroll(1, 'units')
             self.widget.itemconfig('item{}'.format(str(self.index)), fill=settings.DEFAULT_TEXT_COLOR)
