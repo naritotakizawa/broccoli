@@ -30,6 +30,7 @@ class SimpleGameManager:
         self.player = cls.player
         self.current_canvas = None
         self.current_canvas_index = 0
+        self.current_canvas_name = ''
 
     def setup_game(self):
         """ゲームのセットアップ"""
@@ -60,6 +61,7 @@ class SimpleGameManager:
             self.current_canvas.destroy()
 
         self.current_canvas_index = canvas_index
+        self.current_canvas_name = canvas_name
         canvas = self.canvas_list[canvas_name]
         self.current_canvas = canvas(manager=self, name=canvas_name)
         self.current_canvas.pack()
