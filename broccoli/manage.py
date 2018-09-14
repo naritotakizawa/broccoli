@@ -3,7 +3,10 @@
 ゲームキャンバスクラスを格納する、ゲーム全体の進行管理を行うクラスを提供しています。
 
 """
+import json
 import tkinter as tk
+from tkinter import filedialog
+from broccoli import serializers
 from broccoli.containers import IndexDict
 from broccoli.conf import settings
 
@@ -72,3 +75,20 @@ class SimpleGameManager:
         self.setup_game()
         self.jump(index=0)
         self.root.mainloop()
+
+    def save(self):
+        """ゲームのセーブ処理。"""
+        file_path = filedialog.asksaveasfilename(title='保存するファイル名')
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self, file, cls=serializers.JsonEncoder, indent=4)
+
+    def load(self):
+        """ゲームのロード処理。"""
+        file_path = filedialog.asksaveasfilename(title='ロードするファイル名')
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file, cls=serializers.JsonDecoder)
+        self.player = data['player']
+        canvas_name = data['name']
+        tile_layer = data['tile_']
+        self.jump(index=canvas_name)
