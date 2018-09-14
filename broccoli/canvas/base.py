@@ -168,22 +168,6 @@ class GameCanvas2D(tk.Canvas):
         x, y = self.abs_xy_to_layer_xy(abs_x, abs_y)
         return self.get_materials(x, y)
 
-    def create_material(self, material):
-        """マテリアルの描画を行う。
-
-        レイヤークラスのcreate_materialメソッドから呼ばれます。
-
-        このcreate_materialを直接呼び出すケースは少なく、
-        描画処理の際のフックとして利用するのが多いと思われます。
-
-        """
-        material_id = self.create_image(
-            material.x*settings.CELL_WIDTH,
-            material.y*settings.CELL_HEIGHT,
-            image=material.image, anchor='nw'
-        )
-        material.id = material_id
-
     def get_materials(self, x=None,  y=None, material=None):
         """その座標の3マテリアルを返す。"""
         x, y = parse_xy(x, y, material)

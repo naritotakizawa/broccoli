@@ -6,6 +6,7 @@
 
 """
 import random
+from broccoli.conf import settings
 
 
 class BaseLayer:
@@ -18,9 +19,6 @@ class BaseLayer:
     def put_material(self, material, x, y):
         """レイヤに、マテリアルを登録する。"""
         self[y][x] = material
-        material.x = x
-        material.y = y
-        material.layer = self
 
     def all(self, include_none=True):
         """レイヤ内のものを全て返す。
@@ -62,17 +60,29 @@ class BaseLayer:
         既にほかの場所で作成したマテリアルを流用したい場合は、インスタンスを渡すだけで済みます。
 
         """
-        # マテリアルの生成と初期設定
-        material = self.canvas.system.create_material(material_cls, **kwargs)
+        canvas = self.canvas
+        system = canvas.system
 
-        # レイヤへの配置
         # x,y座標の指定がなければ座標を探す
         if x is None or y is None:
-            x, y = self.get_random_empty_space(material)
-        self.put_material(material, x, y)
+            x, y = self.get_random_empty_space(material_cls)
 
-        # キャンバスへの描画
-        self.canvas.create_material(material)
+        kwargs.update({
+            'system': system,
+            'canvas': canvas,
+            'layer': self,
+            'x': x,
+            'y': y,
+        })
+        material = material_cls(**kwargs)
+
+        id = self.canvas.create_image(
+            x*settings.CELL_WIDTH,
+            y*settings.CELL_HEIGHT,
+            image=material.image, anchor='nw'
+        )
+        material.id = id
+        self.put_material(material, x, y)
         return material
 
     def delete_material(self, material):
@@ -210,9 +220,6 @@ class BaseItemLayer(BaseLayer):
 
         """
         self[y][x].append(material)
-        material.x = x
-        material.y = y
-        material.layer = self
 
     def create(self):
         """レイヤーの作成、描画を行う。"""

@@ -28,7 +28,7 @@ class CustomHighLight(tk.Toplevel):
         self.create_widgets()
 
     def create_widgets(self):
-        search = SearchFrame(self,select_callback=self.select_function)
+        search = SearchFrame(self, select_callback=self.select_function)
         search.grid(row=0, column=0, sticky=STICKY_ALL, columnspan=2)
 
         ttk.Label(self, text='マテリアル').grid(column=0, row=1, sticky=STICKY_ALL)
@@ -191,18 +191,24 @@ class MapEditor(ttk.Frame):
         x, y = tile.x, tile.y
         if isinstance(self.select, BaseTile):
             tile.delete()
+            cls, kwargs = self.select.dump()
             self.canvas_frame.canvas.tile_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=cls, x=x, y=y,
+                **kwargs,
             )
         elif isinstance(self.select, BaseObject):
             if obj is not None:
                 obj.delete()
+            cls, kwargs = self.select.dump()
             self.canvas_frame.canvas.object_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=cls, x=x, y=y,
+                **kwargs,
             )
         elif isinstance(self.select, BaseItem):
+            cls, kwargs = self.select.dump()
             self.canvas_frame.canvas.item_layer.create_material(
-                material_cls=self.select.copy(), x=x, y=y,
+                material_cls=cls, x=x, y=y,
+                **kwargs,
             )
 
         else:

@@ -52,21 +52,3 @@ class BaseSystem:
         root = self.canvas.winfo_toplevel()
         for key, func in self.get_key_events():
             root.unbind(key)
-
-    def create_material(self, material_cls, **kwargs):
-        """マテリアルの生成と初期設定を行う。
-
-        レイヤークラスのcreate_materialメソッドから呼ばれます。
-
-        このcreate_materialを直接呼び出すケースは少なく、
-        各システム毎にマテリアル生成に変化をもたせたい場合や、
-        マテリアル生成の際のフックとして利用するのが多いと思われます。
-
-        """
-        try:
-            material = material_cls(**kwargs)
-        except TypeError:
-            material = material_cls
-        material.canvas = self.canvas
-        material.system = self
-        return material

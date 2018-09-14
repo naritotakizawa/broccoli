@@ -218,3 +218,7 @@ class KindnessSheep(RogueLikeObject):
     action = generic.do_nothing
     talk = tutorial_sheep_talk
     on_damage = tutorial_sheep_on_damage
+    items = [
+        (HealingHerb, {}),
+        (HealingHerb, {'name': '特別な薬草'})
+    ]

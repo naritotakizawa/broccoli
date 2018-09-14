@@ -92,7 +92,6 @@ class JsonTileLayer(BaseTileLayer):
     def create_layer(self):
         for y, row in enumerate(self.data):
             for x, col in enumerate(row):
-
                 tile_cls, kwargs = col
                 self.create_material(material_cls=tile_cls, x=x, y=y, **kwargs)
 

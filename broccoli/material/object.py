@@ -35,6 +35,11 @@ class RogueLikeObject(BaseObject):
 
     attrs = [
         'see_x', 'see_y', 'kind', 'hp', 'max_hp', 'power', 'items',
-        'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies', 'talk', 'message'
+        'action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies', 'talk', 'message',
     ]
     func_attrs = ['action', 'move', 'attack', 'random_walk', 'is_enemy', 'on_damage', 'die', 'towards', 'get_enemies', 'talk']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # items内のアイテムを、実際にインスタンス化する。
+        self.items = [cls(owner=self, system=self.system, **item_kwargs) for cls, item_kwargs in self.items]

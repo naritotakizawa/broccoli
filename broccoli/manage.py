@@ -15,7 +15,6 @@ class SimpleGameManager:
     ローグライク等に使いやすいです。
 
     """
-
     canvas_list = IndexDict({})
     player = None
 
@@ -41,17 +40,22 @@ class SimpleGameManager:
 
     def jump(self, index=None):
         """次のマップを表示する"""
+        # indexがNoneなら、次の位置のマップ
         if index is None:
             canvas_index = self.current_canvas_index + 1
             canvas_name = self.canvas_list.get_key_from_index(canvas_index)
         else:
+            # indexが数値なら、その位置のマップを取得
             if isinstance(index, int):
                 canvas_index = index
                 canvas_name = self.canvas_list.get_key_from_index(canvas_index)
+
+            # indexが名前なら、マップ名からマップを取得
             else:
                 canvas_name = index
                 canvas_index = self.canvas_list.get_index_from_key(canvas_name)
 
+        # 初回じゃない限りは、今遊んでいたマップを破棄
         if self.current_canvas is not None:
             self.current_canvas.destroy()
 

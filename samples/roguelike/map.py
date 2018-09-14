@@ -7,11 +7,10 @@ from object import *
 from item import *
 
 
-def tutorial(manager, name):
+def tutorial(**kwargs):
     return GameCanvas2D(
-        manager=manager,
-        name=name,
         tile_layer=JsonTileLayer('tutorial_tile.json'),
         object_layer=JsonObjectLayer('tutorial_obj.json'),
         system=RogueWithPlayer(message_class=LogAndActiveMessageDialog, show_item_dialog_class=ListDialog, x=5, y=5),
+        **kwargs
     )
