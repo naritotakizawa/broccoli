@@ -137,8 +137,12 @@ class GameCanvas2D(tk.Canvas):
 
         return True
 
-    def to_json(self, event=None):
-        """現在のマップデータを、jsonで出力する。"""
+    def save(self, event=None):
+        """現在のマップデータを保存する。
+
+        今のところ、JSONで保存します。
+
+        """
         file_path = filedialog.asksaveasfilename(title='背景の保存先')
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as file:

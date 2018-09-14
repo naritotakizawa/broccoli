@@ -270,7 +270,7 @@ class MapEditor(ttk.Frame):
 
     def save_json(self):
         """jsonとして保存ボタンで呼ばれる"""
-        self.canvas_frame.canvas.to_json()
+        self.canvas_frame.canvas.save()
 
     def expand_tile(self):
         """全展開ボタンで呼ばれる"""
