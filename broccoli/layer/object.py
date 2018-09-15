@@ -9,35 +9,27 @@ class PythonObjectLayer(BaseObjectLayer):
     """Pythonコードからオブジェクトレイヤを作成する
 
     object_layer=PythonObjectLayer(
-        map_list=[
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 1, 2, 0, 0],
-            [0, 0, 0, 0, 0],
-        ],
-        context={
-            1: (BlownBear, {}),
-            2: (WhiteBear, {'direction': 2}),
-        },
+        [
+            [(Sheep, {}), None],
+            [None, None],
+        ]
     ),
     のようにして作成することができます。
 
     """
-    def __init__(self, map_list, context):
+    def __init__(self, data):
         super().__init__()
-        self.map_list = map_list
-        self.context = context
+        self.data = data
 
     def create_layer(self):
-        for y, row in enumerate(self.map_list):
+        for y, row in enumerate(self.data):
             for x, col in enumerate(row):
                 try:
-                    obj_cls, kwargs = self.context[col]
-                except KeyError:
+                    cls, kwargs = col
+                except TypeError:
                     pass
                 else:
-                    self.create_material(material_cls=obj_cls, x=x, y=y, **kwargs)
+                    self.create_material(material_cls=cls, x=x, y=y, **kwargs)
 
 
 class EmptyObjectLayer(BaseObjectLayer):

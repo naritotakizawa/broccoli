@@ -6,12 +6,17 @@
 import json
 import tkinter as tk
 from tkinter import filedialog
-from broccoli import serializers
+from broccoli import serializers, layer
 from broccoli.containers import IndexDict
 from broccoli.conf import settings
 
 
-class SimpleGameManager:
+class BaseManager:
+    """マネージャークラスの既定クラス。"""
+    pass
+
+
+class SimpleGameManager(BaseManager):
     """シンプルなゲームを作るためのマネージャークラス。
 
     クラス属性canvas_listの中にあるマップを、順番に進んでいくシンプルなゲーム管理クラスです。
@@ -76,19 +81,37 @@ class SimpleGameManager:
         self.jump(index=0)
         self.root.mainloop()
 
-    def save(self):
+    def save(self, _event=None):
         """ゲームのセーブ処理。"""
         file_path = filedialog.asksaveasfilename(title='保存するファイル名')
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as file:
                 json.dump(self, file, cls=serializers.JsonEncoder, indent=4)
 
-    def load(self):
+    def load(self, _event=None):
         """ゲームのロード処理。"""
-        file_path = filedialog.asksaveasfilename(title='ロードするファイル名')
-        with open(file_path, 'r', encoding='utf-8') as file:
-            data = json.load(file, cls=serializers.JsonDecoder)
-        self.player = data['player']
-        canvas_name = data['name']
-        tile_layer = data['tile_']
-        self.jump(index=canvas_name)
+        file_path = filedialog.askopenfilename(title='ロードするファイル名')
+        if file_path:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                data = json.load(file, cls=serializers.JsonDecoder)
+
+            self.player = data['player']
+            self.current_canvas_name = canvas_name = data['name']
+            self.current_canvas_index = self.canvas_list.get_index_from_key(canvas_name)
+
+            canvas = self.canvas_list[canvas_name]
+            context = {
+                'manager': self,
+                'name': canvas_name,
+                'tile_layer': layer.PythonTileLayer(data['tile_layer']['layer']),
+                'object_layer': layer.PythonObjectLayer(data['object_layer']['layer']),
+                'item_layer': layer.PythonItemLayer(data['item_layer']['layer']),
+            }
+
+            # 初回じゃない限りは、今遊んでいたマップを破棄
+            if self.current_canvas is not None:
+                self.current_canvas.destroy()
+
+            self.current_canvas = canvas(**context)
+            self.current_canvas.pack()
+            self.current_canvas.start()
