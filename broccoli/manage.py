@@ -3,6 +3,7 @@
 ゲームキャンバスクラスを格納する、ゲーム全体の進行管理を行うクラスを提供しています。
 
 """
+import importlib
 import json
 import tkinter as tk
 from tkinter import filedialog
@@ -23,8 +24,6 @@ class SimpleGameManager(BaseManager):
     ローグライク等に使いやすいです。
 
     """
-    canvas_list = IndexDict({})
-    player = None
 
     # ゲームオーバーメッセージや、マップ名の表示に関する設定
     text_size = 18
@@ -33,9 +32,9 @@ class SimpleGameManager(BaseManager):
     color = settings.DEFAULT_TEXT_COLOR
 
     def __init__(self):
-        cls = type(self)
+        self.vars = {}
         self.root = None
-        self.player = cls.player
+        self.canvas_list = IndexDict({})
         self.current_canvas = None
         self.current_canvas_index = 0
         self.current_canvas_name = ''
@@ -95,7 +94,7 @@ class SimpleGameManager(BaseManager):
             with open(file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file, cls=serializers.JsonDecoder)
 
-            self.player = data['player']
+            self.vars = data['vars']
             self.current_canvas_name = canvas_name = data['name']
             self.current_canvas_index = self.canvas_list.get_index_from_key(canvas_name)
 
@@ -115,3 +114,19 @@ class SimpleGameManager(BaseManager):
             self.current_canvas = canvas(**context)
             self.current_canvas.pack()
             self.current_canvas.start()
+
+
+def get_manager():
+    """マネージャーオブジェクトを返す。
+
+    settings.pyの、MANAGER_CLASS に指定された文字列から
+    利用するマネージャーを返します。
+
+    """
+    module_name, cls_name = settings.MANAGER_CLASS.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    cls = getattr(module, cls_name)
+    return cls()
+
+
+manager = get_manager()
