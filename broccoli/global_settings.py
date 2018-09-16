@@ -35,6 +35,3 @@ DEFAULT_TEXT_COLOR = 'black'
 
 # ブロッコリフレームワークで利用・提供している画像のディレクトリパス
 BROCCOLI_IMG_DIR = os.path.join(os.path.dirname(__file__), 'img')
-
-# 利用するマネージャークラス
-MANAGER_CLASS = 'broccoli.manage.SimpleGameManager'

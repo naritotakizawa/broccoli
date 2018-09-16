@@ -1,13 +1,17 @@
 from broccoli.containers import IndexDict
-from broccoli.manage import manager
+from broccoli.manage import SimpleGameManager
 
 from map import tutorial
 from object import Dog
 
 
-if __name__ == '__main__':
-    manager.canvas_list.update({
+class MyGame(SimpleGameManager):
+    canvas_list = IndexDict({
         'チュートリアル': tutorial,
     })
-    manager.vars['player'] = (Dog, {'name': 'あなた'})
-    manager.start()
+    vars = {'player': (Dog, {'name': 'あなた'})}
+
+
+if __name__ == '__main__':
+    game = MyGame()
+    game.start()
