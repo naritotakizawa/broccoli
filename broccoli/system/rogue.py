@@ -222,7 +222,7 @@ class RogueWithPlayer(RogueLikeSystem):
 
     def setup(self,):
         super().setup()
-        player_cls, kwargs = self.canvas.manager.player
+        player_cls, kwargs = self.canvas.manager.vars['player']
         kwargs.update({
             'kind': const.PLAYER,
             'die': register.functions['roguelike.object.player_die'],

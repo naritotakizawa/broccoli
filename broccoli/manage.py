@@ -23,8 +23,9 @@ class SimpleGameManager(BaseManager):
     ローグライク等に使いやすいです。
 
     """
-    canvas_list = IndexDict({})
-    player = None
+
+    canvas_list = {}
+    vars = {}
 
     # ゲームオーバーメッセージや、マップ名の表示に関する設定
     text_size = 18
@@ -35,7 +36,8 @@ class SimpleGameManager(BaseManager):
     def __init__(self):
         cls = type(self)
         self.root = None
-        self.player = cls.player
+        self.canvas_list = IndexDict(cls.canvas_list)
+        self.vars = cls.vars
         self.current_canvas = None
         self.current_canvas_index = 0
         self.current_canvas_name = ''
@@ -71,7 +73,7 @@ class SimpleGameManager(BaseManager):
         self.current_canvas_index = canvas_index
         self.current_canvas_name = canvas_name
         canvas = self.canvas_list[canvas_name]
-        self.current_canvas = canvas(manager=self, name=canvas_name)
+        self.current_canvas = canvas(master=self.root, manager=self, name=canvas_name)
         self.current_canvas.pack()
         self.current_canvas.start()
 
@@ -95,7 +97,7 @@ class SimpleGameManager(BaseManager):
             with open(file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file, cls=serializers.JsonDecoder)
 
-            self.player = data['player']
+            self.vars = data['vars']
             self.current_canvas_name = canvas_name = data['name']
             self.current_canvas_index = self.canvas_list.get_index_from_key(canvas_name)
 
