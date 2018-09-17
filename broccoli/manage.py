@@ -70,7 +70,7 @@ class SimpleGameManager(BaseManager):
         self.current_canvas_index = canvas_index
         self.current_canvas_name = canvas_name
         canvas = self.canvas_list[canvas_name]
-        self.current_canvas = canvas(manager=self, name=canvas_name)
+        self.current_canvas = canvas(master=self.root, manager=self, name=canvas_name)
         self.current_canvas.pack()
         self.current_canvas.start()
 
