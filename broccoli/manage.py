@@ -24,7 +24,7 @@ class SimpleGameManager(BaseManager):
 
     """
 
-    canvas_list = IndexDict({})
+    canvas_list = {}
     vars = {}
 
     # ゲームオーバーメッセージや、マップ名の表示に関する設定
@@ -34,7 +34,10 @@ class SimpleGameManager(BaseManager):
     color = settings.DEFAULT_TEXT_COLOR
 
     def __init__(self):
+        cls = type(self)
         self.root = None
+        self.canvas_list = IndexDict(cls.canvas_list)
+        self.vars = cls.vars
         self.current_canvas = None
         self.current_canvas_index = 0
         self.current_canvas_name = ''

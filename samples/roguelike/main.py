@@ -1,14 +1,13 @@
-from broccoli.containers import IndexDict
 from broccoli.manage import SimpleGameManager
 
-from map import tutorial
+from map import Tutorial
 from object import Dog
 
 
 class MyGame(SimpleGameManager):
-    canvas_list = IndexDict({
-        'チュートリアル': tutorial,
-    })
+    canvas_list ={
+        'チュートリアル': Tutorial,
+    }
     vars = {'player': (Dog, {'name': 'あなた'})}
 
 
