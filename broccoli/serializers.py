@@ -2,9 +2,9 @@
 import json
 from broccoli import register
 from broccoli.layer import BaseLayer, BaseItemLayer, BaseObjectLayer, BaseTileLayer
-from broccoli.material import BaseTile, BaseObject, BaseItem
+from broccoli.material import BaseTile, BaseObject, BaseItem, BaseMaterial
 
-
+MANAGER = 'Manager'
 LAYER = 'Layer'
 TILE = 'Tile'
 OBJECT = 'Object'
@@ -54,6 +54,19 @@ class JsonEncoder(json.JSONEncoder):
 
     """
 
+    def manager_to_json(self, o):
+        """マネージャーをJSONエンコードする。"""
+        canvas = o.current_canvas
+        result = {
+            'kind': MANAGER,
+            'name': o.current_canvas_name,
+            'vars': self.default(o.vars),
+            'tile_layer': self.layer_to_json(canvas.tile_layer),
+            'object_layer': self.layer_to_json(canvas.object_layer),
+            'item_layer': self.layer_to_json(canvas.item_layer),
+        }
+        return result
+
     def layer_to_json(self, o):
         """レイヤーをJSONエンコードする。"""
         result = {'kind': LAYER}
@@ -82,6 +95,18 @@ class JsonEncoder(json.JSONEncoder):
                 else:
                     result['layer'][y][x] = self.material_to_json(obj, kind=OBJECT)
         return result
+
+    def material_dump_to_json(self, o):
+        """マテリアルダンプをJSONエンコードする。
+
+        (cls, kwargs)形式のマテリアルダンプを一度インスタンス化し、
+        それを再度defaultメソッドに渡し、マテリアルのJSONエンコードを行います。
+
+        """
+        cls = o[0]
+        kwargs = o[1]
+        material = cls(**kwargs)
+        return self.default(material)
 
     def material_to_json(self, o, kind):
         """マテリアルをJSONエンコードする。"""
@@ -113,17 +138,11 @@ class JsonEncoder(json.JSONEncoder):
         このメソッドが最初に呼び出されます。
 
         """
-        # リストやタプルならば、中身がマテリアル等の場合もあるので
-        # 再帰的にJSONエンコードする。
-        if isinstance(o, (list, tuple)):
-            for i, data in enumerate(o):
-                o[i] = self.default(data)
-            return o
+        from broccoli.manage import BaseManager
 
-        # 辞書の場合も、中身がマテリアルの場合があるので再帰的にエンコード。
-        elif isinstance(o, dict):
-            for attr_name, attr_value in o.items():
-                o[attr_name] = self.default(attr_value)
+        # マネージャークラスを渡された場合
+        if isinstance(o, BaseManager):
+            return self.manager_to_json(o)
 
         # レイヤーを渡された場合。レイヤーの専用エンコード処理を呼ぶ。
         elif isinstance(o, BaseLayer):
@@ -137,8 +156,24 @@ class JsonEncoder(json.JSONEncoder):
         elif isinstance(o, BaseItem):
             return self.material_to_json(o, kind=ITEM)
 
-        # 通常の数値や文字列は、デフォルトのエンコード処理を呼ぶ。
-        return super().default(o)
+        # (Material, kwargs)形式のデータの場合
+        elif isinstance(o, tuple) and len(o) >= 2 and issubclass(o[0], BaseMaterial) and isinstance(o[1], dict):
+            return self.material_dump_to_json(o)
+
+        # リストやタプルならば、中身がマテリアル等の場合もあるので
+        # 再帰的にJSONエンコードする。
+        elif isinstance(o, list):
+            for i, data in enumerate(o):
+                o[i] = self.default(data)
+            return o
+
+        # 辞書の場合も、中身がマテリアルの場合があるので再帰的にエンコード。
+        elif isinstance(o, dict):
+            for attr_name, attr_value in o.items():
+                o[attr_name] = self.default(attr_value)
+
+        # 通常の数値や文字列は、そのまま値を返す。
+        return o
 
 
 class JsonDecoder(json.JSONDecoder):
@@ -187,15 +222,6 @@ class JsonDecoder(json.JSONDecoder):
 
     """
 
-    def layer_from_json(self, o):
-        """レイヤーをデコードする。"""
-        layer = o['layer']
-        for y, row in enumerate(layer):
-            for x, col in enumerate(row):
-                layer[y][x] = self._decode(col)
-
-        return o
-
     def _load_material(self, col, container):
         """マテリアルをデコードする。"""
         class_name = col['class_name']
@@ -237,9 +263,7 @@ class JsonDecoder(json.JSONDecoder):
         # 辞書の場合、マテリアルなどの場合は専用のメソッドを、そうでなければ再帰的にデコードする。
         elif isinstance(o, dict):
             kind = o.get('kind')
-            if kind == LAYER:
-                return self.layer_from_json(o)
-            elif kind == TILE:
+            if kind == TILE:
                 return self.tile_from_json(o)
             elif kind == OBJECT:
                 return self.object_from_json(o)

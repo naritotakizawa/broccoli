@@ -32,22 +32,26 @@ class GameCanvas2D(tk.Canvas):
 
     """
 
-    def __init__(self, tile_layer, master=None, name='名前のないマップ', manager=None, system=None, object_layer=None, item_layer=None):
+    def __init__(self, master=None, name='名前のないマップ', manager=None,
+                 tile_layer=None, object_layer=None, item_layer=None, system=None):
+        cls = type(self)
         self.manager = manager
         self.name = name
 
         # 背景層
-        self.tile_layer = tile_layer
+        self.tile_layer = tile_layer or getattr(cls, 'tile_layer')
         self.tile_layer.canvas = self
 
-        # 物体層。object_layerがNoneなら、object_layerが何もない(layer内が全てNone)なEmptyObjectLayerを利用する。
+        # 物体層
+        object_layer = object_layer or getattr(cls, 'object_layer', None)
         if object_layer is None:
             object_layer = EmptyObjectLayer()
         self.object_layer = object_layer
         self.object_layer.canvas = self
         self.object_layer.tile_layer = self.tile_layer
 
-        # アイテム層。item_layerがNoneなら、item_layerが何もない(layer内が全てNone)ならEmptyItemLayerを利用する
+        # アイテム層
+        item_layer = item_layer or getattr(cls, 'item_layer', None)
         if item_layer is None:
             item_layer = EmptyItemLayer()
         self.item_layer = item_layer
@@ -55,6 +59,7 @@ class GameCanvas2D(tk.Canvas):
         self.item_layer.tile_layer = self.tile_layer
 
         # ゲームシステムを保持する。
+        system = system or getattr(cls, 'system', None)
         if system is None:
             system = BaseSystem()
         self.system = system
@@ -137,8 +142,12 @@ class GameCanvas2D(tk.Canvas):
 
         return True
 
-    def to_json(self, event=None):
-        """現在のマップデータを、jsonで出力する。"""
+    def save(self, event=None):
+        """現在のマップデータを保存する。
+
+        今のところ、JSONで保存します。
+
+        """
         file_path = filedialog.asksaveasfilename(title='背景の保存先')
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as file:

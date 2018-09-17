@@ -9,31 +9,23 @@ class PythonTileLayer(BaseTileLayer):
     """Pythonコードから背景を作成する。
 
     tile_layer=PythonTileLayer(
-        map_list=[
-            [1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 1],
-            [1, 0, 0, 0, 1],
-            [1, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1]
-        ],
-        context={
-            1: (WallTile, {}),
-            0: (GreenTile, {'direction': 2}),
-        }
+        [
+            [(Wall, {}), (Wall, {})],
+            [(Wall, {}), (Wall, {})],
+        ]
     ),
     のようにして作成することができます。
 
     """
-    def __init__(self, map_list, context):
-        super().__init__(x_length=len(map_list[0]), y_length=len(map_list))
-        self.map_list = map_list
-        self.context = context
+    def __init__(self, data):
+        super().__init__(x_length=len(data[0]), y_length=len(data))
+        self.data = data
 
     def create_layer(self):
-        for y, row in enumerate(self.map_list):
+        for y, row in enumerate(self.data):
             for x, col in enumerate(row):
-                tile_cls, kwargs = self.context[col]
-                self.create_material(material_cls=tile_cls, x=x, y=y, **kwargs)
+                cls, kwargs = col
+                self.create_material(material_cls=cls, x=x, y=y, **kwargs)
 
 
 class SimpleTileLayer(BaseTileLayer):

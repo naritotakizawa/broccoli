@@ -224,13 +224,10 @@ class EditorCanvas(GameCanvas2D):
     そのため、GameCanvas2Dを継承したこのEditorCanvasもtk.Canvasとして扱えます。
 
     """
+    tile_layer = SimpleTileLayer(x_length=10, y_length=10, inner_tile=TestTile, outer_tile=TestTile)
 
-    def __init__(self, master=None, tile_layer=None, click_callback=None, return_kind='all', **kwargs):
-        # tile_layerがNoneの場合は、仮のタイルを使ったSimpleTileLayerを利用する
-        if tile_layer is None:
-            tile_layer = SimpleTileLayer(x_length=10, y_length=10, inner_tile=TestTile, outer_tile=TestTile)
-        super().__init__(master=master, tile_layer=tile_layer)
-
+    def __init__(self, click_callback=None, return_kind='all', **kwargs):
+        super().__init__(**kwargs)
         self.click_callback = click_callback
         self.return_kind = return_kind
         self.bind('<3>', self.show_materials)
@@ -278,7 +275,7 @@ class EditorCanvasWithScrollBar(ttk.Frame):
 
     def create_widgets(self):
         self.canvas = EditorCanvas(
-            self, tile_layer=self.tile_layer, click_callback=self.click_callback,
+            master=self, tile_layer=self.tile_layer, click_callback=self.click_callback,
             return_kind=self.return_kind
         )
         self.canvas.grid(row=0, column=0, sticky=STICKY_ALL)

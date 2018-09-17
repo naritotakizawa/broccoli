@@ -21,6 +21,8 @@ ATTACK_KEY = 'z'  # 攻撃や決定
 SHOW_ITEM_KEY = 'i'  # アイテムの表示
 SHOW_MESSAGE_KEY = 'l'  # ログ表示キー
 TALK_KEY = 't'  # 喋る
+SAVE_KEY = 'F1'  # セーブ
+LOAD_KEY = 'F2'  # ロード
 
 # ゲーム中のテキストのデフォルトフォント
 DEFAULT_TEXT_FONT = 'ＭＳ ゴシック'

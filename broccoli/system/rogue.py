@@ -49,6 +49,8 @@ class RogueLikeSystem(BaseSystem):
             ('<{}>'.format (settings.SHOW_ITEM_KEY), self.show_item_dialog),
             ('<{}>'.format (settings.SHOW_MESSAGE_KEY), self.message.show),
             ('<{}>'.format(settings.TALK_KEY), self.talk),
+            ('<{}>'.format(settings.SAVE_KEY), self.canvas.manager.save),
+            ('<{}>'.format(settings.LOAD_KEY), self.canvas.manager.load),
         ]
 
     def move(self, event):
@@ -220,7 +222,7 @@ class RogueWithPlayer(RogueLikeSystem):
 
     def setup(self,):
         super().setup()
-        player_cls, kwargs = self.canvas.manager.player
+        player_cls, kwargs = self.canvas.manager.vars['player']
         kwargs.update({
             'kind': const.PLAYER,
             'die': register.functions['roguelike.object.player_die'],

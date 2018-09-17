@@ -34,37 +34,25 @@ class PythonItemLayer(BaseItemLayer):
     """Pythonコードからアイテムレイヤを作成する。
 
     item_layer=PythonItemLayer(
-        item_list=[
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 1, 2, 0, 0],
-            [0, 0, 0, 0, 0],
-        ],
-        context={
-            1: [(HealingHerb, {}), (HealingHerb, {})],
-            2: [(HealingHerb, {'direction': 2})],
-        },
+        [
+            [[], []],
+            [[], [(Herb, {}), (Herb, {})]],
+        ]
     ),
     のようにして作成することができます。
+    リストがネストしてわかりにくいですが、2*2マップで右下にHerbが2つ落ちている例です。
 
     """
-    def __init__(self, item_list, context):
+    def __init__(self, data):
         super().__init__()
-        self.item_list = item_list
-        self.context = context
+        self.data = data
 
     def create_layer(self):
-        for y, row in enumerate(self.item_list):
-            for x, col in enumerate(row):
-                try:
-                    items = self.context[col]
-                except KeyError:
-                    pass
-                else:
-                    for item in items:
-                        item_cls, kwargs = item
-                        self.create_material(material_cls=item_cls, x=x, y=y, **kwargs)
+        for y, row in enumerate(self.data):
+            for x, cols in enumerate(row):
+                for col in cols:
+                    cls, kwargs = col
+                    self.create_material(material_cls=cls, x=x, y=y, **kwargs)
 
 
 class JsonItemLayer(BaseItemLayer):
