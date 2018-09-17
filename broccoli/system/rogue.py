@@ -35,7 +35,6 @@ class RogueLikeSystem(BaseSystem):
     def start(self):
         # 0.1 秒ぐらいごとに、ゲームの状態を監視する
         self.canvas.after(100, self.monitor_game)
-        self.show_map_name()
         self.create_key_event()
 
     def get_key_events(self):
@@ -119,27 +118,6 @@ class RogueLikeSystem(BaseSystem):
     def show_item_dialog(self, event):
         """アイテムリストを表示する。"""
         pass
-
-    def show_map_name(self):
-        """マップ名をかっこよく表示する。"""
-        x, y = self.canvas.get_current_position_center()
-        text = ''
-        for char in self.canvas.name:
-            text += char
-            self.canvas.delete('start_message')
-            self.canvas.create_text(
-                x,
-                y,
-                anchor='center',
-                text=text,
-                font=self.font,
-                fill=self.color,
-                tag='start_message',
-            )
-            self.canvas.after(100)
-            self.canvas.update_idletasks()
-        self.canvas.after(1000)
-        self.canvas.delete('start_message')
 
     def game_over(self):
         """ゲームオーバー処理。"""
